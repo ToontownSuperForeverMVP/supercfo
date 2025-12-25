@@ -117,7 +117,6 @@ class OptionsPage(ShtikerPage):
 
     def exit(self):
         assert self.notify.debugStateCall(self)
-        base.localAvatar.sendUpdate("requestSetBattleSpeed", [base.settings.get('battle-speed')])
         self.optionsTabPage.exit()
 
         # Make the call to the superclass exit method.

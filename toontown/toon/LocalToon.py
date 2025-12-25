@@ -2053,6 +2053,15 @@ class LocalToon(DistributedToon.DistributedToon, LocalAvatar.LocalAvatar):
         self.acceptOnce('sleepWatch', callback)
         self.startSleepWatchTask()
 
+    def startSleepWatchTask(self):
+        # Archipelago integration removed - sleep watch disabled
+        pass
+
+    def stopSleepWatch(self):
+        # Archipelago integration removed - sleep watch disabled
+        pass
+
+
     def enterPlaceWalk(self):
         pass
 
@@ -2063,10 +2072,10 @@ class LocalToon(DistributedToon.DistributedToon, LocalAvatar.LocalAvatar):
         pass
 
     def enableControls(self) -> None:
-        base.controls.enable()
+        self.controlManager.enable()
 
     def disableControls(self) -> None:
-        base.controls.disable()
+        self.controlManager.disable()
 
     def disableOldPieKeys(self) -> None:
         pass

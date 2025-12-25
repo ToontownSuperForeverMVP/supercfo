@@ -74,7 +74,8 @@ def getUberDamageBonus(experience, track, overflowMod=None) -> float:
     if overflow < 0:
         overflow = 0
     if not overflowMod:
-        overflowMod = base.localAvatar.getOverflowMod()
+        # Archipelago integration removed - use default overflow mod
+        overflowMod = 100
     multToAdd = 0
     adjustedOverflow = overflowRates[track] / (overflowMod / 100)
     overflowCutOffs = []
@@ -98,6 +99,7 @@ def getUberDamageBonus(experience, track, overflowMod=None) -> float:
     multiplier = (1 + multToAdd)
     multiplier = round(multiplier, 2)
     return multiplier
+
 
 
 # Returns a clean string representation of the damage bonus from above

@@ -202,7 +202,7 @@ class ToonBase(OTPBase.OTPBase):
         self.wantRichPresence = self.settings.get('discord-rich-presence')
         self.colorBlindMode = self.settings.get('color-blind-mode')
         self.battleSpeed = self.settings.get('battle-speed')
-        self.apSounds = self.settings.get('ap-sounds')
+        self.apSounds = False  # Archipelago remnant - disabled
         # do they want laff meter on or off?
         self.laffMeterDisplay = self.settings.get('laff-display')
         self.randomMusic = self.settings.get("random-music")
@@ -500,6 +500,10 @@ class ToonBase(OTPBase.OTPBase):
         return self.exitErrorCode
 
     def userExit(self):
+        # Save settings before exiting
+        if hasattr(self, 'settings'):
+            self.settings.write()
+        
         try:
             self.localAvatar.d_setAnimState('TeleportOut', 1)
         except:

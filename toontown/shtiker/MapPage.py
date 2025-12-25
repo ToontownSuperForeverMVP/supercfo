@@ -177,7 +177,8 @@ class MapPage(ShtikerPage.ShtikerPage):
         except:
             zone = 0
 
-        self.updateTasksAvailableFrames()
+        # Archipelago integration removed - updateTasksAvailableFrames disabled
+
 
         if base.localAvatar.lastHood >= ToontownGlobals.BossbotHQ:
             self.safeZoneButton['text'] = TTLocalizer.MapPageBackToCogHQ

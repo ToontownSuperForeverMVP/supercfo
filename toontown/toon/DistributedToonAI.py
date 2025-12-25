@@ -300,8 +300,7 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
     def delete(self):
         self.notify.debug('----Deleting DistributedToonAI %d ' % self.doId)
         if self.isPlayerControlled():
-            self.apRewardQueue.stop()
-            self.apMessageQueue.stop()
+            # Archipelago integration removed - reward/message queues disabled
             messenger.send('avatarExited', [self])
         if simbase.wantPets:
             if self.isInEstate():
@@ -2377,19 +2376,13 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
     def addMoney(self, deltaMoney, isLocalChange=True):
         money = deltaMoney + self.money
         pocketMoney = min(money, self.maxMoney)
-        if isLocalChange:
-            self.archipelago_session.toon_change_money(deltaMoney, isLocalChange)
-        self.ap_addMoney(deltaMoney)
         self.b_setMoney(pocketMoney)
 
     def takeMoney(self, deltaMoney, isLocalChange=True):
         totalMoney = self.money
-        if isLocalChange:
-            self.archipelago_session.toon_change_money((deltaMoney * -1), isLocalChange)
         if deltaMoney > totalMoney:
             self.notify.warning('Not enough money! AvId: %s Has:%s Charged:%s' % (self.doId, totalMoney, deltaMoney))
             return False
-        self.ap_takeMoney(deltaMoney)
         self.b_setMoney(self.money - deltaMoney)
         return True
 
@@ -4295,8 +4288,4 @@ class DistributedToonAI(DistributedPlayerAI.DistributedPlayerAI, DistributedSmoo
         self.sendUpdateToAvatarId(self.doId, 'doTeleport', [hood])
 
     def setTalk(self, fromAV, fromAC, avatarName, chat, mods, flags):
-        if self.archipelago_session:
-            self.archipelago_session.handle_chat(chat)
-
-    ### Archipelago stuff ###
-
+        pass

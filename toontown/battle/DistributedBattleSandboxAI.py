@@ -86,10 +86,9 @@ class DistributedBattleSandboxAI(DistributedBattleBaseAI):
 
     # Send a message to active toons
     def broadcast(self, msg: str):
-        for toonId in self.activeToons:
-            toon = self.air.getDo(toonId)
-            if isinstance(toon, DistributedToonAI):
-                toon.d_sendArchipelagoMessage(msg)
+        # Archipelago integration removed - broadcast disabled
+        pass
+
 
     """
     Boilerplate FSM code, this pretty much just makes the battle function correctly

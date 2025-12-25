@@ -59,7 +59,8 @@ class InventoryNew(InventoryBase.InventoryBase, DirectFrame):
     def __calculateBaseBattleCreditMultiplier(self):
         hood = ZoneUtil.getHoodId(base.localAvatar.zoneId)
         hoodMult = ToontownBattleGlobals.getHoodSkillCreditMultiplier(hood)
-        return hoodMult * base.localAvatar.getBaseGagSkillMultiplier()
+        # Archipelago integration removed - use default skill multiplier
+        return hoodMult * 1.0
 
     def setDefaultBattleCreditMultiplier(self):
         self.setBattleCreditMultiplier(1)
@@ -267,7 +268,8 @@ class InventoryNew(InventoryBase.InventoryBase, DirectFrame):
         self.detailAmountLabel.configure(text=TTLocalizer.InventoryDetailAmount % {'numItems': self.numItem(track, level),
          'maxItems': self.getMax(track, level)})
         self.detailDataLabel.show()
-        damage = getAvPropDamage(track, level, self.toon.experience, toonDamageMultiplier=self.toon.getDamageMultiplier(), overflowMod=self.toon.getOverflowMod())
+        # Archipelago integration removed - use default overflow mod
+        damage = getAvPropDamage(track, level, self.toon.experience, toonDamageMultiplier=self.toon.getDamageMultiplier(), overflowMod=100)
         # damage = int(damage)
         organicBonus = self.toon.checkGagBonus(track, level)
         propBonus = self.checkPropBonus(track)

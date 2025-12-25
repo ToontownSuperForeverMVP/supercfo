@@ -11,4 +11,4 @@ def get_min_cog_quota(av) -> int:
 
 
 def get_max_cog_quota(av) -> int:
-    return av.slotData.get('maxed_cog_gallery_quota', 5)
+    return 5

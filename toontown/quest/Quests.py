@@ -2233,90 +2233,9 @@ def transformReward(baseRewardId):
 # Called when we talk to an HQ Officer, which quests should we offer the player?
 # Pass in the NPC, the toon to give quests for, and a list of reward IDs to ignore
 def chooseBestQuests(currentNpc, av, excludeRewards: List[int], seed=None):
+    # Archipelago integration removed - return empty list
+    return []
 
-    # If this is not an HQ npc, ignore them
-    if not currentNpc.getHq():
-        return []
-
-    # Get the hood ID this HQ officer is residing in and use it to find the locations this playground offers
-    hoodId = ZoneUtil.getHoodId(currentNpc.zoneId)
-
-    # What AP locations can this hood offer for us?
-    allHoodTaskLocationNames = util.hood_to_task_locations(hoodId)
-
-    # Use the index of this NPC to choose ideal quests
-    npcHQIndex = currentNpc.getPositionIndex()
-
-    # Quests in each playground are 12 quests each, meaning we should have gotten a list of 12 location names
-    # This NPC will offer 3 of those. Find some offset and offer that subsection of all the tasks
-    taskLocationOffset = npcHQIndex * 3
-    taskLocationEnd = taskLocationOffset + 3
-    # Splice the list to choose 3 tasks we want, this should splice like so: 0-2, 3-5, 6-8, 9-11
-    locationsWeOffer = allHoodTaskLocationNames[taskLocationOffset:taskLocationEnd]
-
-    # Optionally, Hint the locally available tasks
-    if av.slotData.get("task_reward_display", RewardDisplayOption.default) == RewardDisplayOption.option_auto_hint:
-        packet = LocationScoutsPacket()
-        packet.create_as_hint = 2 # only announce new hints
-        packet.locations = [util.ap_location_name_to_id(loc) for loc in locationsWeOffer]
-        av.archipelago_session.client.send_packet(packet)
-
-    # Now convert these AP locations into base Toontown quest reward items
-    rewardsFromLocation = []
-    for location in locationsWeOffer:
-
-        # If the player has already checked the location via AP, they do not need to do this quest
-        locationID = util.ap_location_name_to_id(location)
-        if av.hasCheckedLocation(locationID):
-            continue
-
-        convertedRewardID = getRewardIdFromAPLocationName(location)
-
-        # If we want to exclude this reward ID for whatever reason, do not include it
-        if convertedRewardID in excludeRewards:
-            continue
-
-        # This quest will be valid for our player to grab
-        rewardsFromLocation.append(convertedRewardID)
-
-    # Now that we have the rewards these quests choices should give, let's generate some options
-    # These need to be formatted like so for the QuestMgr to process them correctly:
-    # Return a list of Quests like so:
-    # We only need a questID and a rewardID essentially
-    # [
-    #   [bestQuestId, rewardId, ToonHQ],
-    #   [bestQuestId, rewardId, ToonHQ],
-    #   [bestQuestId, rewardId, ToonHQ],
-    # ]
-
-    # RNG seeding
-    rng = random.Random()
-    if seed is not None:
-        rng.seed(seed)
-
-    # Define our pool of quests per reward ID
-    questPool: Dict[int, List[int]] = {}  # Reward ID -> List of Quest IDs with reward
-    for rewardID in rewardsFromLocation:
-        questPool[rewardID] = []
-
-    # Loop through every quest in the game and find quests that have a reward we are interested in
-    for questId, questInformation in QuestDict.items():
-        thisQuestReward = questInformation[QuestDictRewardIndex]
-        # Does the reward match one of the ones we have?
-        if thisQuestReward in questPool:
-            questPool[thisQuestReward].append(questId)
-
-    bestQuests = []
-
-    # Now randomly choose a quest per reward ID that we want to show
-    for rewardID, questIdChoices in questPool.items():
-        randomQuest = rng.choice(questIdChoices)
-        bestQuests.append([randomQuest, rewardID, ToonHQ])
-
-    # Reverse the list bc it looks better for the client lol
-    bestQuests.reverse()
-
-    return bestQuests
 
 
 def getQuest(id):
