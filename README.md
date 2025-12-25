@@ -1,4 +1,9 @@
-# Toontown: Archipelago
+# SuperCFO
+Enhancing the CFO! This is more of a personal project that is separate from Toontown Super where I want to dip into some new territory and try and make the CFO feel more chaotic, and just see how far I get with making the fight more entertaining for me and maybe you!
+
+This fork is a fork of Toontown: Crane League/Archipelago, which the README is located just below:
+
+Toontown: Archipelago
 Welcome to the repository of the Archipelago version of the Toontown!
 
 This source is built on the foundation of Toontown Offline's Toontown School House's source code.
