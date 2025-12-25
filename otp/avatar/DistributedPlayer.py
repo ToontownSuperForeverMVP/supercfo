@@ -2,6 +2,7 @@ from panda3d.core import *
 from libotp import WhisperPopup
 from libotp import CFQuicktalker, CFPageButton, CFQuitButton, CFSpeech, CFThought, CFTimeout
 from libotp.nametag.WhisperGlobals import WhisperType
+from libotp.nametag.ColorProfile import ColorProfile
 from otp.chat import ChatGarbler
 import string
 from direct.task import Task

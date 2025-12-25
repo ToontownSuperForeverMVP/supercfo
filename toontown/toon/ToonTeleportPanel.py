@@ -201,7 +201,7 @@ class ToonTeleportPanel(DirectFrame):
     def exitWentAway(self):
         self.bOk.hide()
 
-        def enterUnknownHood(self, hoodId):
+    def enterUnknownHood(self, hoodId):
         self['text'] = TTLocalizer.TeleportPanelUnknownHood % base.cr.hoodMgr.getFullnameFromId(hoodId)
         self.bOk.show()
 

@@ -449,7 +449,8 @@ class OTPClientRepository(ClientRepositoryBase):
         datagram = PyDatagram()
         datagram.addUint16(CLIENT_HELLO)
         datagram.addUint32(self.hashVal)
-        datagram.addString(self.serverVersion)
+        # Bypassing version check - send empty string to allow any version
+        datagram.addString("")
         self.send(datagram)
 
     def handleConnecting(self, msgType, di):
@@ -812,6 +813,12 @@ class OTPClientRepository(ClientRepositoryBase):
 
     @report(types=['args', 'deltaStamp'], dConfigParam='teleport')
     def enterNoConnection(self):
+        # Bypass version mismatch check for local server
+        if self.bootedIndex == OTPGlobals.BootedVersionMismatch:
+            self.notify.warning('Version mismatch detected - ignoring for local server')
+            # Don't disconnect - just ignore this boot code
+            return
+        
         messenger.send('connectionIssue')
         self.resetInterestStateForConnectionLoss()
         self.shardListHandle = None
@@ -1720,7 +1727,23 @@ class OTPClientRepository(ClientRepositoryBase):
         if self.__recordObjectMessage(msgType, di):
             return
         if msgType == CLIENT_EJECT:
-            self.handleGoGetLost(di)
+            # Check if this is a version mismatch boot - if so, ignore it
+            # We need to peek at the boot code without consuming the datagram
+            bootCode = di.getUint16()
+            if bootCode == OTPGlobals.BootedVersionMismatch:
+                # Version mismatch - read the message but don't disconnect
+                errorMessage = di.getString()
+                self.notify.warning('Version mismatch detected (code %d: %s) - bypassing for local server' % (bootCode, errorMessage))
+                return
+            # Not a version mismatch, restore position and handle normally
+            # We can't restore position, so we need to reconstruct the datagram
+            # Actually, let's just pass it through - the parent will handle it
+            # But we already consumed the bootCode, so we need to handle it here
+            self.bootedIndex = bootCode
+            self.bootedText = di.getString()
+            self.notify.warning('Server is booting us out (%d): %s' % (self.bootedIndex, self.bootedText))
+            self.stopReaderPollTask()
+            self.lostConnection()
         elif msgType == CLIENT_HEARTBEAT:
             self.handleServerHeartbeat(di)
         elif msgType == CLIENT_ENTER_OBJECT_REQUIRED:

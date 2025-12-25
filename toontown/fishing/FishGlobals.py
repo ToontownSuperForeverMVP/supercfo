@@ -1,12 +1,32 @@
 from typing import List, Tuple, Dict
-
-from apworld.toontown.fish import FishGenus, ROD_DICT, FISH_DICT, FishDef, FishingRodDef, FishZone, get_catchable_fish, FishLocation
 from toontown.toonbase import TTLocalizer
 from math import ceil, pow
 import random
 from toontown.toonbase import ToontownGlobals
 import copy
 
+# Fish Genus enum values (from original Toontown)
+class FishGenus:
+    BalloonFish = 0
+    CatFish = 1
+    Clownfish = 2
+    Frozen_Fish = 3
+    Starfish = 4
+    Holy_Mackerel = 5
+    Dog_Fish = 6
+    AmoreEel = 7
+    Nurse_Shark = 8
+    King_Crab = 9
+    Moon_Fish = 10
+    Seahorse = 11
+    Pool_Shark = 12
+    Bear_Acuda = 13
+    CutThroatTrout = 14
+    Piano_Tuna = 15
+    PBJ_Fish = 16
+    DevilRay = 17
+
+# Original Toontown constants
 NoMovie = 0
 EnterMovie = 1
 ExitMovie = 2
@@ -59,6 +79,48 @@ RodRarityFactor = {0: 1.0 / (GlobalRarityDialBase * 1),
  3: 1.0 / (GlobalRarityDialBase * 0.9),
  4: 1.0 / (GlobalRarityDialBase * 0.85)}
 MaxRodId = 4
+
+# Rod weight ranges (minWeight, maxWeight)
+RodWeightRanges = {
+    0: (0, 4),
+    1: (0, 8),
+    2: (0, 12),
+    3: (4, 16),
+    4: (8, 20)
+}
+
+# Fish weight ranges and rarities: {genus: [(minWeight, maxWeight, rarity), ...]}
+FishData = {
+    FishGenus.BalloonFish: [(1, 10, 5), (1, 12, 7), (2, 14, 9)],
+    FishGenus.CatFish: [(2, 6, 3), (2, 8, 5), (3, 10, 7)],
+    FishGenus.Clownfish: [(1, 4, 2), (1, 6, 4), (2, 8, 6)],
+    FishGenus.Frozen_Fish: [(4, 12, 6), (5, 14, 8), (6, 16, 10)],
+    FishGenus.Starfish: [(1, 3, 1), (1, 5, 3), (2, 7, 5)],
+    FishGenus.Holy_Mackerel: [(3, 10, 5), (4, 12, 7), (5, 14, 9)],
+    FishGenus.Dog_Fish: [(2, 8, 4), (3, 10, 6), (4, 12, 8)],
+    FishGenus.AmoreEel: [(5, 15, 7), (6, 17, 9), (7, 19, 10)],
+    FishGenus.Nurse_Shark: [(8, 16, 8), (9, 18, 9), (10, 20, 10)],
+    FishGenus.King_Crab: [(6, 14, 7), (7, 16, 8), (8, 18, 10)],
+    FishGenus.Moon_Fish: [(4, 10, 6), (5, 12, 7), (6, 14, 9)],
+    FishGenus.Seahorse: [(2, 6, 4), (3, 8, 6), (4, 10, 8)],
+    FishGenus.Pool_Shark: [(6, 14, 7), (7, 16, 9), (8, 18, 10)],
+    FishGenus.Bear_Acuda: [(8, 18, 9), (9, 19, 10), (10, 20, 10)],
+    FishGenus.CutThroatTrout: [(4, 12, 6), (5, 14, 8), (6, 16, 9)],
+    FishGenus.Piano_Tuna: [(10, 18, 9), (11, 19, 10), (12, 20, 10)],
+    FishGenus.PBJ_Fish: [(3, 9, 5), (4, 11, 7), (5, 13, 8)],
+    FishGenus.DevilRay: [(7, 15, 8), (8, 17, 9), (9, 19, 10)]
+}
+
+# Zone to fish mapping (simplified - all fish available in all ponds for now)
+ZoneToPondId = {
+    ToontownGlobals.ToontownCentral: 0,
+    ToontownGlobals.DonaldsDock: 1,
+    ToontownGlobals.DaisyGardens: 2,
+    ToontownGlobals.MinniesMelodyland: 3,
+    ToontownGlobals.TheBrrrgh: 4,
+    ToontownGlobals.DonaldsDreamland: 5
+}
+
 FishAudioFileDict = {
     -1: ("Clownfish.ogg", 1, 1.5, 1.0),
     FishGenus.BalloonFish: ("BalloonFish.ogg", 1, 0, 1.23),
@@ -80,6 +142,7 @@ FishAudioFileDict = {
     FishGenus.PBJ_Fish: ("PBJ_Fish.ogg", 1, 0, 1.25),
     FishGenus.DevilRay: ("DevilRay.ogg", 0, 0, 1.0),
 }
+
 FishFileDict = {
     -1: (4, "clownFish-zero", "clownFish-swim", "clownFish-swim", None, (0.12, 0, -0.15), 0.38, -35, 20),
     FishGenus.BalloonFish:    (4, "balloonFish-zero", "balloonFish-swim", "balloonFish-swim", None, (0.0, 0, 0.0), 1.0, 0, 0),
@@ -112,23 +175,26 @@ TrophyDict = {0: (TTLocalizer.FishTrophyNameDict[0],),
 TTG = ToontownGlobals
 
 
-def getSpecies(genus: FishGenus) -> Tuple[FishDef]:
-    return FISH_DICT[genus]
+def getSpecies(genus):
+    """Get all species for a genus"""
+    return list(range(len(FishData.get(genus, []))))
 
 
-def getGenera() -> List[int]:
-    return [int(genus) for genus in FISH_DICT]
+def getGenera():
+    """Get all fish genera"""
+    return list(FishData.keys())
 
 
 def getNumRods():
-    return len(ROD_DICT)
+    return len(RodPriceDict)
 
 
-def getCastCost(rodId: int):
-    return ROD_DICT[rodId].cast_cost
+def getCastCost(rodId):
+    # Original Toontown didn't have cast cost, return 0
+    return 0
 
 
-def canBeCaughtByRod(genus: FishGenus, species: int, rodIndex: int):
+def canBeCaughtByRod(genus, species, rodIndex):
     minFishWeight, maxFishWeight = getWeightRange(genus, species)
     minRodWeight, maxRodWeight = getRodWeightRange(rodIndex)
     if minRodWeight <= maxFishWeight and maxRodWeight >= minFishWeight:
@@ -137,11 +203,11 @@ def canBeCaughtByRod(genus: FishGenus, species: int, rodIndex: int):
         return 0
 
 
-def getRodWeightRange(rodIndex: int):
-    return ROD_DICT[rodIndex].weight_range
+def getRodWeightRange(rodIndex):
+    return RodWeightRanges.get(rodIndex, (0, 20))
 
 
-def __rollRarityDice(rodId: int, rNumGen):
+def __rollRarityDice(rodId, rNumGen):
     if rNumGen is None:
         diceRoll = random.random()
     else:
@@ -153,7 +219,7 @@ def __rollRarityDice(rodId: int, rNumGen):
     return rarity
 
 
-def getRandomWeight(genus: FishGenus, species: int, rodIndex = None, rNumGen = None):
+def getRandomWeight(genus, species, rodIndex=None, rNumGen=None):
     minFishWeight, maxFishWeight = getWeightRange(genus, species)
     if rodIndex is None:
         minWeight = minFishWeight
@@ -173,28 +239,24 @@ def getRandomWeight(genus: FishGenus, species: int, rodIndex = None, rNumGen = N
 __fish_rarity_cache = {}
 
 
-def getRandomFishVitals(zoneId, rodId, rNumGen = None, location = FishLocation.Vanilla, forceRarity = None):
-    catchable_fish = get_catchable_fish(zoneId, rodId, location)
+def getRandomFishVitals(zoneId, rodId, rNumGen=None, location=None, forceRarity=None):
+    # Get all catchable fish for this zone
+    catchable_fish = []
+    for genus in FishData:
+        for species_idx, (minW, maxW, rarity) in enumerate(FishData[genus]):
+            if canBeCaughtByRod(genus, species_idx, rodId):
+                catchable_fish.append((genus, species_idx, rarity))
+    
     rolledRarity = forceRarity or __rollRarityDice(rodId, rNumGen)
 
-    # Obtain cached value for this rarity.
-    __fish_rarity_cache.setdefault(zoneId, {})
-    __fish_rarity_cache[zoneId].setdefault(rodId, {})
-    __fish_rarity_cache[zoneId][rodId].setdefault(location, {})
-    __fish_rarity_cache[zoneId][rodId][location].setdefault(rolledRarity, None)
-    catchableFishOfRarity = __fish_rarity_cache[zoneId][rodId][location][rolledRarity]
+    # Filter for matchingrarity
+    catchableFishOfRarity = [
+        (fishGenus, speciesIndex)
+        for fishGenus, speciesIndex, rarity in catchable_fish
+        if rarity == rolledRarity
+    ]
 
-    # If cache miss, fill cache here.
-    if catchableFishOfRarity is None:
-        # Filter for all catchable fish in this rarity.
-        catchableFishOfRarity = [
-            (fishGenus, speciesIndex)
-            for fishGenus, speciesIndex, rarity in catchable_fish
-            if rarity == rolledRarity
-        ]
-        __fish_rarity_cache[zoneId][rodId][location][rolledRarity] = catchableFishOfRarity
-
-    # Pick a random fish (if present).
+    # Pick a random fish (if present)
     if catchableFishOfRarity:
         genus, species = (rNumGen or random).choice(catchableFishOfRarity)
         weight = getRandomWeight(genus, species, rodId, rNumGen)
@@ -203,12 +265,20 @@ def getRandomFishVitals(zoneId, rodId, rNumGen = None, location = FishLocation.V
     return 0, 0, 0, 0
 
 
-def getWeightRange(genus: FishGenus, species: int):
-    return FISH_DICT[genus][species].weight_range
+def getWeightRange(genus, species):
+    fish_species = FishData.get(genus, [])
+    if species < len(fish_species):
+        minW, maxW, rarity = fish_species[species]
+        return (minW, maxW)
+    return (1, 10)
 
 
 def getRarity(genus, species):
-    return FISH_DICT[genus][species].rarity
+    fish_species = FishData.get(genus, [])
+    if species < len(fish_species):
+        minW, maxW, rarity = fish_species[species]
+        return rarity
+    return 5
 
 
 def getValue(genus, species, weight):
@@ -223,36 +293,27 @@ def getValue(genus, species, weight):
             holidayIds = base.cr.newsManager.getHolidayIdList()
             if ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY in holidayIds or ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY_MONTH in holidayIds:
                 finalValue *= JellybeanFishingHolidayScoreMultiplier
-    elif ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY in simbase.air.holidayManager.currentHolidays or ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY_MONTH in simbase.air.holidayManager.currentHolidays:
-        finalValue *= JellybeanFishingHolidayScoreMultiplier
+    elif hasattr(simbase, 'air') and hasattr(simbase.air, 'holidayManager'):
+        if ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY in simbase.air.holidayManager.currentHolidays or ToontownGlobals.JELLYBEAN_FISHING_HOLIDAY_MONTH in simbase.air.holidayManager.currentHolidays:
+            finalValue *= JellybeanFishingHolidayScoreMultiplier
     return finalValue
 
 
-__totalNumFish = len([
-    (fishGenus, speciesIndex)
-    for fishGenus in FISH_DICT
-    for speciesIndex in FISH_DICT[fishGenus]
-])
-
-
 def getTotalNumFish():
-    return __totalNumFish
+    total = 0
+    for genus in FishData:
+        total += len(FishData[genus])
+    return total
 
 
-def getAllFish() -> List[Tuple[FishGenus, int]]:
-
+def getAllFish():
     fishies = []
-
-    for genusID, thisGenusSpeciesList in FISH_DICT.items():
+    for genusID, thisGenusSpeciesList in FishData.items():
         for speciesID in range(len(thisGenusSpeciesList)):
             fishies.append((genusID, speciesID))
-
     return fishies
 
 
 def getPondGeneraList(pondId):
-    genusSet = set()
-    catchableFish = get_catchable_fish(pondId, MaxRodId, FishLocation.Vanilla)
-    for fishGenus, speciesIndex, rarity in catchableFish:
-        genusSet.add(fishGenus)
-    return list(genusSet)
+    # Return all genera for now
+    return list(FishData.keys())

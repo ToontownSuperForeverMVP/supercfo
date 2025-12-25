@@ -1,7 +1,6 @@
 from direct.directnotify import DirectNotifyGlobal
 from direct.distributed.DistributedObjectAI import DistributedObjectAI
 
-from apworld.toontown.fish import FishProgression, can_av_fish_here, LICENSE_TO_ACCESS_CODE
 from toontown.fishing import FishGlobals
 from toontown.hood import ZoneUtil
 
@@ -63,14 +62,6 @@ class DistributedFishingSpotAI(DistributedObjectAI):
 
         av = self.air.doId2do.get(avId)
         if not av:
-            return
-
-        # Do they have their license?
-        hoodId = ZoneUtil.getHoodId(self.zoneId)
-        accessCode = can_av_fish_here(av, hoodId)
-        if accessCode != -1:
-            # They do not have the license to fish here.
-            self.sendUpdateToAvatarId(avId, 'rejectEnter', [accessCode])
             return
 
         # Get them onboard.

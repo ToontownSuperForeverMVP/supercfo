@@ -4,8 +4,6 @@ from direct.directnotify import DirectNotifyGlobal
 from direct.distributed.ClockDelta import globalClockDelta
 from direct.task import Task
 
-from ..archipelago.definitions.death_reason import DeathReason
-
 
 class DistributedMazeAI(DistributedEntityAI.DistributedEntityAI):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedMazeAI')
@@ -86,6 +84,5 @@ class DistributedMazeAI(DistributedEntityAI.DistributedEntityAI):
         if room:
             playerIds = room.presentAvIds
             if av and senderId in playerIds:
-                av.setDeathReason(DeathReason.MAZE)
                 av.takeDamage(self.DamageOnFailure, quietly=0)
                 room.sendUpdate('forceOuch', [self.DamageOnFailure])

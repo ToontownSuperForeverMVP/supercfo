@@ -9,7 +9,6 @@ from direct.task import Task
 from direct.directnotify import DirectNotifyGlobal
 from toontown.toonbase import ToontownAccessAI
 from toontown.building import FADoorCodes
-from apworld.toontown import FacilityLocking
 
 class DistributedElevatorAI(DistributedObjectAI.DistributedObjectAI):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedElevatorAI')
@@ -198,13 +197,8 @@ class DistributedElevatorAI(DistributedObjectAI.DistributedObjectAI):
         }
         # Only use this locking logic for facilities, use the general otherwise
         if self.isLocked() and self.lockID in list(FACodeToAccess.keys()):
-            if av.slotData.get('facility_locking', 0) == FacilityLocking.option_keys and not self.avHasKey(av):
-                return self.lockID
-            elif av.slotData.get('facility_locking', 0) == FacilityLocking.option_access:
-                if not self.avHasKey(av, FACodeToAccess[self.lockID]):
-                    return FACodeToAccess[self.lockID]
-            elif av.slotData.get('facility_locking', 0) == FacilityLocking.option_unlocked:
-                return 0
+            # Default to unlocked for facilities (original game behavior)
+            return 0
         else:
             if self.isLocked() and not self.avHasKey(av):
                 return self.lockID

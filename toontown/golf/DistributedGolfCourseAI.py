@@ -8,39 +8,12 @@ from panda3d.core import *
 from direct.fsm.FSM import FSM
 from toontown.ai.ToonBarrier import *
 from toontown.golf import GolfGlobals
-from ..archipelago.definitions import util
-from apworld.toontown import locations
-INITIAL = 0
-EXITED = 1
-EXPECTED = 2
-JOINED = 3
-READY = 4
-ONHOLE = 5
-BALLIN = 6
-JOIN_TIMEOUT = 30
-READY_TIMEOUT = 30
-EXIT_TIMEOUT = 30
-REWARD_TIMEOUT = 30
-COURSE_TO_CHECK = {
-    0: [util.ap_location_name_to_id(locations.ToontownLocationName.EASY_GOLF_1),
-        util.ap_location_name_to_id(locations.ToontownLocationName.EASY_GOLF_2),
-        util.ap_location_name_to_id(locations.ToontownLocationName.EASY_GOLF_3)],
-    1: [util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_1),
-        util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_2),
-        util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_3),
-        util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_4),
-        util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_5),
-        util.ap_location_name_to_id(locations.ToontownLocationName.MED_GOLF_6)],
-    2: [util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_1),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_2),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_3),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_4),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_5),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_6),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_7),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_8),
-        util.ap_location_name_to_id(locations.ToontownLocationName.HARD_GOLF_9)]
-}
+# Archipelago integration removed
+# from ..archipelago.definitions import util
+# from apworld.toontown import locations
+
+# COURSE_TO_CHECK disabled - Archipelago integration removed
+
 
 class DistributedGolfCourseAI(DistributedObjectAI.DistributedObjectAI, FSM):
     notify = directNotify.newCategory('DistributedGolfCourseAI')
@@ -545,6 +518,521 @@ class DistributedGolfCourseAI(DistributedObjectAI.DistributedObjectAI, FSM):
         retval = self.numHoles - self.numHolesPlayed == 1
         return retval
 
+INITIAL = 0
+EXITED = 1
+EXPECTED = 2
+JOINED = 3
+READY = 4
+ONHOLE = 5
+BALLIN = 6
+JOIN_TIMEOUT = 30
+READY_TIMEOUT = 30
+EXIT_TIMEOUT = 30
+REWARD_TIMEOUT = 30
+
+class DistributedGolfCourseAI(DistributedObjectAI.DistributedObjectAI, FSM):
+    notify = directNotify.newCategory('DistributedGolfCourseAI')
+    defaultTransitions = {'Off': ['WaitJoin'],
+     'WaitJoin': ['WaitReadyCourse', 'Cleanup'],
+     'WaitReadyCourse': ['WaitReadyHole', 'Cleanup'],
+     'WaitReadyHole': ['PlayHole',
+                       'Cleanup',
+                       'WaitLeaveHole',
+                       'WaitReward'],
+     'PlayHole': ['PlayHole',
+                  'WaitLeaveHole',
+                  'Cleanup',
+                  'WaitReward'],
+     'WaitLeaveHole': ['WaitReadyHole',
+                       'WaitLeaveCourse',
+                       'Cleanup',
+                       'WaitReward'],
+     'WaitReward': ['WaitLeaveCourse', 'Cleanup', 'WaitLeaveHole'],
+     'WaitLeaveCourse': ['Cleanup'],
+     'Cleanup': ['Off']}
+
+    def __init__(self, zoneId, avIds, courseId, preferredHoleId = None):
+        FSM.__init__(self, 'GolfCourse_%s_FSM' % zoneId)
+        DistributedObjectAI.DistributedObjectAI.__init__(self, simbase.air)
+        self.notify.debug('GOLF COURSE: init')
+        self.zoneId = zoneId
+        self.currentHole = None
+        self.avIdList = []
+        self.avStateDict = {}
+        self.addExpectedGolfers(avIds)
+        self.courseId = courseId
+        self.preferredHoleId = preferredHoleId
+        self.courseInfo = GolfGlobals.CourseInfo[self.courseId]
+        self.numHoles = self.courseInfo['numHoles']
+        self.holeIds = self.calcHolesToUse()
+        self.notify.debug('self.holeIds = %s' % self.holeIds)
+        self.numHolesPlayed = 0
+        self.curHoleIndex = 0
+        self.trophyListLen = 0
+        self.courseBestListLen = 0
+        self.holeBestListLen = 0
+        self.cupListLen = 0
+        self.scores = {}
+        self.aimTimes = {}
+        self.startingHistory = {}
+        self.endingHistory = {}
+        self.startingHoleBest = {}
+        self.endingHoleBest = {}
+        self.startingCourseBest = {}
+        self.endingCourseBest = {}
+        self.startingCups = {}
+        self.endingCups = {}
+        self.initHistory()
+        self.newTrophies = {}
+        self.newHoleBest = {}
+        self.newCourseBest = {}
+        self.newCups = {}
+        self.drivingToons = []
+        self.__barrier = None
+        self.winnerByTieBreak = 0
+        return
+
+    def initHistory(self):
+        for avId in self.avIdList:
+            av = simbase.air.doId2do.get(avId)
+            if av:
+                history = av.getGolfHistory()
+                self.startingHistory[avId] = history[:]
+                self.endingHistory[avId] = history[:]
+                holeBest = av.getGolfHoleBest()
+                self.startingHoleBest[avId] = holeBest[:]
+                self.endingHoleBest[avId] = holeBest[:]
+                courseBest = av.getGolfCourseBest()
+                self.startingCourseBest[avId] = courseBest[:]
+                self.endingCourseBest[avId] = courseBest[:]
+
+    def generate(self):
+        DistributedObjectAI.DistributedObjectAI.generate(self)
+        self.grabGolfers()
+
+    def delete(self):
+        self.notify.debug('GOLF COURSE: delete: deleting AI GolfCourse object')
+        if hasattr(self, 'rewardBarrier'):
+            self.rewardBarrier.cleanup()
+            del self.rewardBarrier
+        if self.currentHole:
+            self.notify.debug('calling requestDelete on hole %d' % self.currentHole.doId)
+            self.currentHole.requestDelete()
+            self.currentHole = None
+        self.ignoreAll()
+        from toontown.golf import GolfManagerAI
+        GolfManagerAI.GolfManagerAI().removeCourse(self)
+        if self.__barrier:
+            self.__barrier.cleanup()
+            self.__barrier = None
+        DistributedObjectAI.DistributedObjectAI.delete(self)
+        return
+
+    def load(self):
+        self.b_setCourseReady()
+        self.request('WaitReadyCourse')
+
+    def getZoneId(self):
+        return self.zoneId
+
+    def addExpectedGolfers(self, avIdList):
+        self.notify.debug('Sending %s to course %s' % (avIdList, self.zoneId))
+        for avId in avIdList:
+            golfer = simbase.air.doId2do.get(avId)
+            if golfer:
+                if avId not in self.avIdList:
+                    self.avIdList.append(avId)
+                    self.avStateDict[avId] = INITIAL
+                elif self.avStateDict[avId] == EXITED:
+                    if self.isGenerated():
+                        pass
+                else:
+                    self.notify.warning('GOLF COURSE: trying to grab golfer %s that is already on the course' % avId)
+
+    def grabGolfers(self):
+        for avId in self.avIdList:
+            golfer = simbase.air.doId2do.get(avId)
+            if golfer:
+                if self.avStateDict[avId] == INITIAL:
+                    self.avStateDict[avId] = EXPECTED
+
+        self.request('WaitJoin')
+
+    def getGolferIds(self):
+        return self.avIdList
+
+    def checkGolferPlaying(self, avId):
+        if self.avStateDict[avId] == ONHOLE:
+            return 1
+        else:
+            return 0
+
+    def b_setCourseReady(self):
+        self.setCourseReady()
+        self.d_setCourseReady()
+
+    def d_setCourseReady(self):
+        self.notify.debug('GOLF COURSE: Sending setCourseReady')
+        self.sendUpdate('setCourseReady', [self.numHoles, self.holeIds, self.calcCoursePar()])
+
+    def setCourseReady(self):
+        self.notify.debug('GOLF COURSE: setCourseReady: golf course ready with avatars: %s' % self.avIdList)
+        self.trophyListLen = 0
+        self.courseBestListLen = 0
+        self.holeBestListLen = 0
+        self.cupListLen = 0
+        self.normalExit = 1
+
+    def d_setPlayHole(self):
+        self.notify.debug('GOLF COURSE: setPlayHole: play on golf hole about to start')
+        self.sendUpdate('setPlayHole', [])
+
+    def b_setCourseExit(self):
+        self.d_setCourseExit()
+        self.setCourseExit()
+
+    def d_setCourseExit(self):
+        self.notify.debug('GOLF COURSE: Sending setGameExit')
+        self.sendUpdate('setCourseExit', [])
+
+    def setCourseExit(self):
+        self.notify.debug('GOLF COURSE: setGameExit')
+
+    def handleExitedAvatar(self, avId):
+        self.notify.warning('GOLF COURSE: handleExitedAvatar: avatar id exited: ' + str(avId))
+        self.avStateDict[avId] = EXITED
+        self.sendUpdate('avExited', [avId])
+        if self.currentHole and not self.haveAllGolfersExited():
+            self.currentHole.avatarDropped(avId)
+        if self.haveAllGolfersExited():
+            self.setCourseAbort()
+        elif self.isCurHoleDone():
+            if self.isPlayingLastHole():
+                if self.state not in ['WaitReward', 'WaitReadyHole']:
+                    self.safeDemand('WaitReward')
+            else:
+                self.notify.debug('allBalls are in holes, calling holeOver')
+                self.holeOver()
+        if hasattr(self, 'rewardBarrier'):
+            if self.rewardBarrier:
+                self.rewardBarrier.clear(avId)
+        if hasattr(self, '__barrier'):
+            if self.__barrier:
+                self.__.clear(avId)
+
+    def startNextHole(self):
+        self.notify.debugStateCall(self)
+        holeId = self.holeIds[self.numHolesPlayed]
+        self.currentHole = DistributedGolfHoleAI.DistributedGolfHoleAI(self.zoneId, golfCourse=self, holeId=holeId)
+        self.currentHole.generateWithRequired(self.zoneId)
+        self.d_setCurHoleDoId(self.currentHole.doId)
+        self.safeDemand('WaitReadyHole')
+
+    def holeOver(self):
+        self.notify.debug('GOLF COURSE: holeOver')
+        self.numHolesPlayed += 1
+        if self.numHolesPlayed < self.numHoles:
+            self.b_setCurHoleIndex(self.numHolesPlayed)
+        self.safeDemand('WaitLeaveHole')
+
+    def setCourseAbort(self):
+        self.notify.debug('GOLF COURSE: setGameAbort')
+        self.normalExit = 0
+        self.sendUpdate('setCourseAbort', [0])
+        self.safeDemand('Cleanup')
+
+    def enterOff(self):
+        self.notify.debug('GOLF COURSE: enterOff')
+
+    def exitOff(self):
+        self.notify.debug('GOLF COURSE: exitOff')
+
+    def enterWaitJoin(self):
+        self.notify.debug('GOLF COURSE: enterWaitJoin')
+        for avId in self.avIdList:
+            self.avStateDict[avId] = EXPECTED
+            self.acceptOnce(self.air.getAvatarExitEvent(avId), self.handleExitedAvatar, extraArgs=[avId])
+
+        def allAvatarsJoined(self = self):
+            self.notify.debug('GOLF COURSE: all avatars joined')
+            self.load()
+
+        def handleTimeout(avIds, self = self):
+            self.notify.debug('GOLF COURSE: timed out waiting for clients %s to join' % avIds)
+            for avId in self.avStateDict:
+                if not self.avStateDict[avId] == JOINED:
+                    self.handleExitedAvatar(avId)
+
+            if self.haveAllGolfersExited():
+                self.setCourseAbort()
+            else:
+                self.load()
+
+        self.__barrier = ToonBarrier('waitClientsJoin', self.uniqueName('waitClientsJoin'), self.avIdList, JOIN_TIMEOUT, allAvatarsJoined, handleTimeout)
+
+    def exitWaitJoin(self):
+        self.notify.debugStateCall(self)
+        self.__barrier.cleanup()
+        self.__barrier = None
+        return
+
+    def setAvatarJoined(self):
+        avId = self.air.getAvatarIdFromSender()
+        self.notify.debug('GOLF COURSE: setAvatarJoined: avatar id joined: ' + str(avId))
+        self.avStateDict[avId] = JOINED
+        self.notify.debug('GOLF COURSE: setAvatarJoined: new states: ' + str(self.avStateDict))
+        if hasattr(self, '_DistributedGolfCourseAI__barrier') and self.__barrier:
+            self.__barrier.clear(avId)
+        else:
+            self.notify.warning('setAvatarJoined avId=%d but barrier is invalid' % avId)
+
+    def exitFrameworkWaitClientsJoin(self):
+        self.__barrier.cleanup()
+        del self.__barrier
+
+    def enterWaitReadyCourse(self):
+        self.notify.debug('GOLF COURSE: enterWaitReadyCourse')
+
+        def allAvatarsInCourse(self = self):
+            self.notify.debug('GOLF COURSE: all avatars ready course')
+            for avId in self.avIdList:
+                blankScoreList = [0] * self.numHoles
+                self.scores[avId] = blankScoreList
+                self.aimTimes[avId] = 0
+
+            self.notify.debug('self.scores = %s' % self.scores)
+            self.startNextHole()
+
+        def handleTimeout(avIds, self = self):
+            self.notify.debug("GOLF COURSE: Course timed out waiting for clients %s to report 'ready'" % avIds)
+            if self.haveAllGolfersExited():
+                self.setCourseAbort()
+            else:
+                allAvatarsInCourse()
+
+        self.__barrier = ToonBarrier('WaitReadyCourse', self.uniqueName('WaitReadyCourse'), self.avIdList, READY_TIMEOUT, allAvatarsInCourse, handleTimeout)
+        for avId in list(self.avStateDict.keys()):
+            if self.avStateDict[avId] == READY:
+                self.__barrier.clear(avId)
+
+    def setAvatarReadyCourse(self):
+        avId = self.air.getAvatarIdFromSender()
+        self.notify.debug('GOLF COURSE: setAvatarReadyCourse: avatar id ready: ' + str(avId))
+        self.avStateDict[avId] = READY
+        self.notify.debug('GOLF COURSE: setAvatarReadyCourse: new avId states: ' + str(self.avStateDict))
+        if self.state == 'WaitReadyCourse':
+            self.__barrier.clear(avId)
+
+    def exitWaitReadyCourse(self):
+        self.notify.debugStateCall(self)
+        self.__barrier.cleanup()
+        self.__barrier = None
+        return
+
+    def enterWaitReadyHole(self):
+        self.notify.debug('GOLF COURSE: enterWaitReadyHole')
+
+        def allAvatarsInHole(self = self):
+            self.notify.debug('GOLF COURSE: all avatars ready hole')
+            if self.safeDemand('PlayHole'):
+                self.d_setPlayHole()
+
+        def handleTimeout(avIds, self = self):
+            self.notify.debug("GOLF COURSE: Hole timed out waiting for clients %s to report 'ready'" % avIds)
+            if self.haveAllGolfersExited():
+                self.setCourseAbort()
+            elif self.safeDemand('PlayHole'):
+                self.d_setPlayHole()
+
+        stillPlaying = self.getStillPlayingAvIds()
+        self.__barrier = ToonBarrier('WaitReadyHole', self.uniqueName('WaitReadyHole'), stillPlaying, READY_TIMEOUT, allAvatarsInHole, handleTimeout)
+        for avId in list(self.avStateDict.keys()):
+            if self.avStateDict[avId] == ONHOLE:
+                self.__barrier.clear(avId)
+
+    def exitWaitReadyHole(self):
+        self.notify.debugStateCall(self)
+        if hasattr(self, '__barrier'):
+            self.__barrier.cleanup()
+            self.__barrier = None
+        return
+
+    def getStillPlayingAvIds(self):
+        retval = []
+        for avId in self.avIdList:
+            av = simbase.air.doId2do.get(avId)
+            if av:
+                if avId in self.avStateDict and not self.avStateDict[avId] == EXITED:
+                    retval.append(avId)
+
+        return retval
+
+    def avatarReadyHole(self, avId):
+        if self.state not in ['WaitJoin', 'WaitReadyCourse', 'WaitReadyHole']:
+            self.notify.debug('GOLF COURSE: Ignoring setAvatarReadyHole message')
+            return
+        self.notify.debug('GOLF COURSE: setAvatarReadyHole: avatar id ready: ' + str(avId))
+        self.avStateDict[avId] = ONHOLE
+        self.notify.debug('GOLF COURSE: setAvatarReadyHole: new avId states: ' + str(self.avStateDict))
+        if self.state == 'WaitReadyHole':
+            self.__barrier.clear(avId)
+
+    def enterPlayHole(self):
+        self.notify.debug('GOLF COURSE: enterPlayHole')
+        if self.currentHole and not self.currentHole.playStarted:
+            self.currentHole.startPlay()
+
+    def exitPlayHole(self):
+        self.notify.debug('GOLF COURSE: exitPlayHole')
+
+    def enterWaitLeaveHole(self):
+        self.notify.debugStateCall(self)
+        self.notify.debug('calling requestDelete on hole %d' % self.currentHole.doId)
+        self.currentHole.requestDelete()
+        self.currentHole = None
+        if self.numHolesPlayed >= self.numHoles:
+            pass
+        else:
+            self.startNextHole()
+        return
+
+    def exitWaitLeaveHole(self):
+        pass
+
+    def enterWaitReward(self):
+        self.updateHistoryForCourseComplete()
+        self.awardTrophies()
+        self.awardCups()
+        self.awardHoleBest()
+        self.awardCourseBest()
+        self.recordHoleInOne()
+        self.recordCourseUnderPar()
+        trophiesList = []
+        for index in range(len(self.avIdList)):
+            avId = self.avIdList[index]
+            if avId in self.newTrophies:
+                oneTrophyList = self.newTrophies[avId]
+                trophiesList.append(oneTrophyList)
+            else:
+                trophiesList.append([])
+
+        while len(trophiesList) < GolfGlobals.MAX_PLAYERS_PER_HOLE:
+            trophiesList.append([])
+
+        holeBestList = []
+        for index in range(len(self.avIdList)):
+            avId = self.avIdList[index]
+            if avId in self.newHoleBest:
+                oneTrophyList = self.newHoleBest[avId]
+                holeBestList.append(oneTrophyList)
+            else:
+                holeBestList.append([])
+
+        while len(holeBestList) < GolfGlobals.MAX_PLAYERS_PER_HOLE:
+            holeBestList.append([])
+
+        courseBestList = []
+        for index in range(len(self.avIdList)):
+            avId = self.avIdList[index]
+            if avId in self.newCourseBest:
+                oneTrophyList = self.newCourseBest[avId]
+                courseBestList.append(oneTrophyList)
+            else:
+                courseBestList.append([])
+
+        while len(courseBestList) < GolfGlobals.MAX_PLAYERS_PER_HOLE:
+            courseBestList.append([])
+
+        cupList = []
+        for index in range(len(self.avIdList)):
+            avId = self.avIdList[index]
+            if avId in self.newCups:
+                oneCupList = self.newCups[avId]
+                cupList.append(oneCupList)
+                self.cupListLen = self.cupListLen + 1
+            else:
+                cupList.append([])
+
+        while len(cupList) < GolfGlobals.MAX_PLAYERS_PER_HOLE:
+            cupList.append([])
+
+        REWARD_TIMEOUT = (self.trophyListLen + self.holeBestListLen + self.courseBestListLen + self.cupListLen) * 5 + 19
+        aimTimesList = [0] * 4
+        aimIndex = 0
+        stillPlaying = self.getStillPlayingAvIds()
+        for avId in  self.avIdList:
+            if avId in stillPlaying:
+                aimTime = 0
+                if avId in self.aimTimes:
+                    aimTime = self.aimTimes[avId]
+                aimTimesList[aimIndex] = aimTime
+            aimIndex += 1
+
+        self.sendUpdate('setReward', [trophiesList,
+         self.rankings,
+         holeBestList,
+         courseBestList,
+         cupList,
+         self.winnerByTieBreak,
+         aimTimesList[0],
+         aimTimesList[1],
+          aimTimesList[2],
+         aimTimesList[3]])
+
+        def allAvatarsRewarded(self = self):
+            self.notify.debug('GOLF COURSE: all avatars rewarded')
+            self.rewardDone()
+
+        def handleRewardTimeout(avIds, self = self):
+            self.notify.debug('GOLF COURSE: timed out waiting for clients %s to finish reward' % avIds)
+            self.rewardDone()
+
+        stillPlaying = self.getStillPlayingAvIds()
+        self.rewardBarrier = ToonBarrier('waitReward', self.uniqueName('waitReward'), stillPlaying, REWARD_TIMEOUT, allAvatarsRewarded, handleRewardTimeout)
+
+    def exitWaitReward(self):
+        pass
+
+    def enterWaitLeaveCourse(self):
+        self.notify.debugStateCall(self)
+        self.setCourseAbort()
+
+    def exitWaitLeaveCourse(self):
+        pass
+
+    def enterCleanup(self):
+        self.notify.debug('GOLF COURSE: enterCleanup')
+        self.requestDelete()
+
+    def exitCleanup(self):
+        self.notify.debug('GOLF COURSE: exitCleanup')
+
+    def isCurHoleDone(self):
+        retval = False
+        if self.areAllBallsInHole():
+            retval = True
+        else:
+            retval = True
+            for state in list(self.avStateDict.values()):
+                if not (state == BALLIN or state == EXITED):
+                    retval = False
+                    break
+
+        return retval
+
+    def areAllBallsInHole(self):
+        self.notify.debug('areAllBallsInHole, self.avStateDict=%s' % self.avStateDict)
+        allBallsInHole = True
+        for state in list(self.avStateDict.values()):
+            if state != BALLIN:
+                allBallsInHole = False
+
+        return allBallsInHole
+
+    def isPlayingLastHole(self):
+        retval = self.numHoles - self.numHolesPlayed == 1
+        return retval
+
     def setBallIn(self, avId):
         self.notify.debug('setBallIn %d' % avId)
         if self.avStateDict[avId] == BALLIN:
@@ -552,9 +1040,11 @@ class DistributedGolfCourseAI(DistributedObjectAI.DistributedObjectAI, FSM):
             return
         self.avStateDict[avId] = BALLIN
         self.updateHistoryForBallIn(avId)
-        av = simbase.air.doId2do.get(avId)
-        if av:
-            av.addCheckedLocation(COURSE_TO_CHECK[self.courseId][self.numHolesPlayed])
+        # Archipelago location checking disabled
+        # av = simbase.air.doId2do.get(avId)
+        # if av:
+        #     av.addCheckedLocation(COURSE_TO_CHECK[self.courseId][self.numHolesPlayed])
+
         if self.isCurHoleDone():
             if self.isPlayingLastHole():
                 if self.state != 'WaitReward':

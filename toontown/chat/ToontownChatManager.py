@@ -409,6 +409,14 @@ class ToontownChatManager(ChatManager.ChatManager):
             print('ChatManager: productName: %s not recognized' % base.cr.productName)
 
     def __scButtonPressed(self):
+        if base.config.GetBool('want-qa-regression', 0):
+            self.notify.info('QA-REGRESSION: CHAT: Speedchat Plus')
+        messenger.send('wakeup')
+        if self.fsm.getCurrentState().getName() == 'speedChat':
+            self.fsm.request('mainMenu')
+        else:
+            self.fsm.request('speedChat')
+
     def __whisperButtonPressed(self, avatarName, avatarId, playerId):
         messenger.send('wakeup')
         playerInfo = None

@@ -1,4 +1,3 @@
-from apworld.toontown import fish
 from toontown.toonbase import TTLocalizer, ToontownGlobals
 
 UNLOCKED = 0
@@ -152,13 +151,6 @@ reasonDict = {
     CASHBOT_FACILTIES_MISSING: TTLocalizer.FADoorCodes_CASHBOT_FACILTIES_MISSING,
     LAWBOT_FACILTIES_MISSING: TTLocalizer.FADoorCodes_LAWBOT_FACILTIES_MISSING,
     BOSSBOT_FACILTIES_MISSING: TTLocalizer.FADoorCodes_BOSSBOT_FACILTIES_MISSING,
-
-    fish.TTC_FISHING_MISSING: TTLocalizer.FADoorCodes_TTC_FISHING_MISSING,
-    fish.DD_FISHING_MISSING: TTLocalizer.FADoorCodes_DD_FISHING_MISSING,
-    fish.DG_FISHING_MISSING: TTLocalizer.FADoorCodes_DG_FISHING_MISSING,
-    fish.MM_FISHING_MISSING: TTLocalizer.FADoorCodes_MM_FISHING_MISSING,
-    fish.TB_FISHING_MISSING: TTLocalizer.FADoorCodes_TB_FISHING_MISSING,
-    fish.DDL_FISHING_MISSING: TTLocalizer.FADoorCodes_DDL_FISHING_MISSING,
 
     ToontownGlobals.PUTTER_KEY: TTLocalizer.FADoorCodes_GOLF_PUTTER_MISSING,
 }

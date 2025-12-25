@@ -1,5 +1,3 @@
-from apworld.toontown import fish
-from apworld.toontown.fish import FishZone, FishLocation, FishZoneToName, can_av_fish_at_zone
 from toontown.toonbase import ToontownGlobals
 from direct.directnotify import DirectNotifyGlobal
 from direct.gui.DirectGui import *
@@ -98,35 +96,34 @@ class GenusPanel(DirectFrame):
 
         if self.fishPanel is not None:
             self.fishPanel.show(showBackground=1)
-            textProperty = '\1black\1' if hasGenus else '\1red\1'
-            self['text'] = textProperty + TTLocalizer.FishGenusNames[self.genus] + '\2'
+            textProperty = '\\1black\\1' if hasGenus else '\\1red\\1'
+            self['text'] = textProperty + TTLocalizer.FishGenusNames[self.genus] + '\\2'
+        
         for species in range(len(FishGlobals.getSpecies(self.genus))):
-            fishDef = fish.get_fish_def(self.genus, species)
-
             hasFish = base.localAvatar.fishCollection.hasFish(self.genus, species)
-            rodRequired = fish.get_required_rod(fishDef)
-            rodName = FishingRodNameDict[rodRequired]
-            hasSufficientRod = fish.can_catch_fish(fishDef, base.localAvatar.fishingRod)
+            
+            # Get the rod required for this fish (based on weight range)
+            minWeight, maxWeight = FishGlobals.getWeightRange(self.genus, species)
+            rodRequired = 0  # Default to twig rod
+            
+            # Determine minimum rod needed based on max fish weight
+            for rodId in range(FishGlobals.MaxRodId + 1):
+                minRodWeight, maxRodWeight = FishGlobals.getRodWeightRange(rodId)
+                if maxRodWeight >= maxWeight:
+                    rodRequired = rodId
+                    break
+            
+            rodName = FishingRodNameDict.get(rodRequired, "Twig")
+            hasSufficientRod = base.localAvatar.fishingRod >= rodRequired
 
-            textProperty = '\1measly_brown\1' if hasFish else '\1red\1' if hasSufficientRod else '\1red\1'
+            textProperty = '\\1measly_brown\\1' if hasFish else '\\1black\\1' if hasSufficientRod else '\\1red\\1'
 
-            speciesText = textProperty + TTLocalizer.FishSpeciesNames[self.genus][species] + '\2\n\1json_fish_subtext\1'
-            if hasFish:
-                speciesSubtext = '\2'
-            elif hasSufficientRod:
-                # Show the location of the fish.
-                fishLocation = FishLocation(base.localAvatar.slotData.get('fish_locations', 1))
-                location_strings = [
-                    (
-                        '\1black\1' if can_av_fish_at_zone(base.localAvatar, fishZone) else '\1red\1'
-                    ) + FishZoneToName[fishZone] + '\2'
-                    for fishZone in fishDef.get_filtered_zones(fishLocation)
-                ]
-                speciesSubtext = f'  {", ".join(location_strings)}\2'
-            else:
-                # Show the rod required.
-                speciesSubtext = f'  \1red\1{rodName} Rod\2'
+            speciesText = textProperty + TTLocalizer.FishSpeciesNames[self.genus][species] + '\\2'
+            
+            if not hasFish and not hasSufficientRod:
+                # Show the rod required
+                speciesText += '\\n\\1json_fish_subtext\\1  \\1red\\1' + rodName + ' Rod\\2'
 
-            self.speciesLabels[species]['text'] = speciesText + speciesSubtext
+            self.speciesLabels[species]['text'] = speciesText
 
         return

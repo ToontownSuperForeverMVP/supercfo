@@ -1,10 +1,10 @@
 from direct.gui.DirectGui import *
 from panda3d.core import *
 
-from apworld.toontown.fish import FishLocation, get_catchable_fish_no_rarity, FishProgression
-from apworld.toontown import ToontownItemName, get_item_def_from_id
-from toontown.toonbase import ToontownGlobals
-from toontown.archipelago.definitions import util
+# Archipelago integration removed
+# from apworld.toontown.fish import FishLocation, get_catchable_fish_no_rarity, FishProgression
+# from apworld.toontown import ToontownItemName, get_item_def_from_id
+
 
 
 class QuestsAvailablePoster(DirectFrame):
@@ -77,19 +77,9 @@ class FishAvailablePoster(QuestsAvailablePoster):
         return True
 
     def update(self, av, hoodId):
-        # How many fish are present?
-        location = FishLocation(av.slotData.get('fish_locations', 1))
-        if location == FishLocation.Vanilla:
-            # Lump up vanilla locations into playgrounds for display purposes
-            location = FishLocation.Playgrounds
+        # Archipelago features disabled
+        self.showNumAvailable(0)
 
-        fishRemaining = 0
-        for genus, species in get_catchable_fish_no_rarity(hoodId, av.fishingRod, location):
-            if not av.fishCollection.hasFish(genus, species):
-                fishRemaining += 1
-
-        # Show num available.
-        self.showNumAvailable(fishRemaining)
 
 
 class TreasureAvailablePoster(QuestsAvailablePoster):
@@ -119,16 +109,9 @@ class TreasureAvailablePoster(QuestsAvailablePoster):
         return ToontownGlobals.ARCHI_CODE_TO_LOCATION[hood][index]
 
     def update(self, av):
-        # How many treasures are present?
-        treasureCount = av.slotData.get('treasures_per_location', 4)
+        # Archipelago features disabled
+        self.showNumAvailable(0)
 
-        treasuresRemaining = 0
-        for treasure in range(treasureCount):
-            if self.getLocationFromCode(self.hoodId, treasure) not in av.getCheckedLocations():
-                treasuresRemaining += 1
-
-        # Show num available.
-        self.showNumAvailable(treasuresRemaining)
 
 
 class PetsAvailablePoster(QuestsAvailablePoster):
@@ -158,14 +141,9 @@ class PetsAvailablePoster(QuestsAvailablePoster):
         return util.ap_location_name_to_id(ToontownGlobals.ZONE_TO_ID_TO_CHECK[hood][index])
 
     def update(self, av):
-        petsRemaining = 0
-        petsPerPlayground = 3
-        for pet in range(petsPerPlayground):
-            if self.getLocationFromZone(self.hoodId, pet+1) not in av.getCheckedLocations():
-                petsRemaining += 1
+        # Archipelago features disabled  
+        self.showNumAvailable(0)
 
-        # Show num available.
-        self.showNumAvailable(petsRemaining)
 
 
 class CanRacePoster(QuestsAvailablePoster):
@@ -195,16 +173,9 @@ class CanRacePoster(QuestsAvailablePoster):
         return iconGeom
 
     def update(self, av):
-        haveItem = False
-        items = av.getReceivedItems()
-        for item in items:
-            index_received, item_id = item
-            if get_item_def_from_id(item_id).name == ToontownItemName.GO_KART:
-                haveItem = True
-                break
+        # Archipelago features disabled
+        self.showLocked()
 
-        # Show if available.
-        self.displayStatus(haveItem)
 
     def displayStatus(self, status):
         if status:
@@ -244,16 +215,9 @@ class CanGolfPoster(QuestsAvailablePoster):
         return iconGeom
 
     def update(self, av):
-        haveItem = False
-        items = av.getReceivedItems()
-        for item in items:
-            index_received, item_id = item
-            if get_item_def_from_id(item_id).name == ToontownItemName.GOLF_PUTTER:
-                haveItem = True
-                break
+        # Archipelago features disabled
+        self.showLocked()
 
-        # Show if available.
-        self.displayStatus(haveItem)
 
     def displayStatus(self, status):
         if status:
