@@ -1,6 +1,6 @@
 @echo off
 title Toontown Archipelago: Astron Launcher
-cd ..\..\astron
+cd ..\astron
 
 :main
     astrond.exe --loglevel info config/astrond.yml

@@ -2,7 +2,7 @@
 title Toontown Archipelago: UD Launcher
 set /P PPYTHON_PATH=<PPYTHON_PATH
 set SERVICE_TO_RUN=UD
-cd ..\..
+cd ..\
 
 set BASE_CHANNEL=1000000
 set MAX_CHANNELS=999999
@@ -13,6 +13,6 @@ set WANT_ERROR_REPORTING=true
 
 :main
     %PPYTHON_PATH% -m pip install -r requirements.txt
-    %PPYTHON_PATH% -m launch.launcher.launch
+    %PPYTHON_PATH% -m toontown.uberdog.UDStart
     pause
 goto main
