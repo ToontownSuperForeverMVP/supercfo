@@ -1,9 +1,6 @@
 from typing import Dict, NamedTuple, List
 
 from otp.otpbase import OTPGlobals
-from apworld.toontown import locations
-from toontown.archipelago.definitions import util
-from toontown.archipelago.packets.serverbound.location_scouts_packet import LocationScoutsPacket
 from toontown.toonbase import ToontownBattleGlobals
 from toontown.toonbase import ToontownGlobals
 from toontown.battle import SuitBattleGlobals

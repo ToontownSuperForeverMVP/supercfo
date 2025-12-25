@@ -265,14 +265,9 @@ class BattleCalculatorAI:
         defense = suit.getLevel() * -5
         return max(defense, -SuitBattleGlobals.MAX_SUIT_DEFENSE)
 
-    # Returns a list of toons that are not enemies with an avId.
+    # Returns a list of all toons in the battle.
     def __getAllToonsNotEnemiesWithAvId(self, avId):
-        ret = []
-        for toon in self.battle.activeToons:
-            if simbase.air.archipelagoManager.onEnemyTeams(avId, toon):
-                continue
-            ret.append(toon)
-        return ret
+        return self.battle.activeToons[:]
 
     def __createToonTargetList(self, attackIndex):
         attack = self.battle.toonAttacks[attackIndex]

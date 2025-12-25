@@ -16,8 +16,6 @@ from otp.level import PathEntity
 from . import GoonDeath
 import random
 
-from ..archipelago.definitions.death_reason import DeathReason
-
 
 class DistributedGoon(DistributedCrushableEntity.DistributedCrushableEntity, Goon.Goon, FSM.FSM):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedGoon')
@@ -252,7 +250,6 @@ class DistributedGoon(DistributedCrushableEntity.DistributedCrushableEntity, Goo
         self.isStunned = 0
         if avId == base.localAvatar.doId:
             if self.level:
-                base.localAvatar.d_setDeathReason(DeathReason.GOON)
                 self.level.b_setOuch(self.strength)
         self.animTrack = self.makeAttackTrack()
         self.animTrack.loop()

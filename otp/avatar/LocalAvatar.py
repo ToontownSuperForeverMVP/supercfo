@@ -8,7 +8,6 @@ from direct.interval.IntervalGlobal import *
 from direct.showbase.InputStateGlobal import inputState
 
 from libotp.nametag.WhisperGlobals import WhisperType
-from toontown.archipelago.definitions.color_profile import ColorProfile
 from . import Avatar
 from direct.controls import ControlManager
 from . import DistributedAvatar

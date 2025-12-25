@@ -3,10 +3,6 @@ from typing import Dict
 
 from direct.directnotify import DirectNotifyGlobal
 
-from apworld.toontown import locations
-from apworld.toontown.fish import can_catch_new_species, FishLocation, GENUS_SPECIES_TO_LOCATION, GENUS_TO_LOCATION, FishChecks
-
-from toontown.archipelago.definitions.util import ap_location_name_to_id
 from toontown.fishing import FishGlobals
 from toontown.fishing.DistributedFishingPondAI import DistributedFishingPondAI
 from toontown.fishing.FishBase import FishBase
@@ -45,13 +41,11 @@ class FishManagerAI:
         return fishingSpot
 
     def attemptForceNewSpecies(self, av, zoneId, oldFish):
-        location = FishLocation(av.slotData.get('fish_locations', 1))
-
         # Perform many attempts
         for _ in range(10):
             # Check each rarity
             for rarity in range(10):
-                success, genus, species, weight = FishGlobals.getRandomFishVitals(zoneId, av.getFishingRod(), location=location, forceRarity=rarity + 1)
+                success, genus, species, weight = FishGlobals.getRandomFishVitals(zoneId, av.getFishingRod(), forceRarity=rarity + 1)
                 fish = FishBase(genus, species, weight)
                 result = av.fishCollection.getCollectResult(fish)  # Simulate us catching the fish but don't actually
 
@@ -74,7 +68,7 @@ class FishManagerAI:
         return rng < threshold
 
     def addNewSpeciesPity(self, av):
-        pity = (av.slotData.get('fish_pity', 25) / 100)
+        pity = 0.25
 
         # Add the pity
         oldPity = self.newSpeciesPity.get(av.doId, 0)
@@ -125,8 +119,7 @@ class FishManagerAI:
 
         # Process the item we rolled
         if itemType == FishGlobals.FishItem:
-            location = FishLocation(av.slotData.get('fish_locations', 1))
-            success, genus, species, weight = FishGlobals.getRandomFishVitals(zoneId, av.getFishingRod(), location=location)
+            success, genus, species, weight = FishGlobals.getRandomFishVitals(zoneId, av.getFishingRod())
             fish = FishBase(genus, species, weight)
 
             # Route species logic for pity
@@ -147,20 +140,13 @@ class FishManagerAI:
             else:
                 itemType = FishGlobals.FishItem
 
-            # Do location checks on this.
-            fishLocationName = GENUS_SPECIES_TO_LOCATION[fish.getGenus(), fish.getSpecies()]
-            genusLocationName = GENUS_TO_LOCATION[fish.getGenus()]
-
-            av.addCheckedLocation(ap_location_name_to_id(fishLocationName.value))
-            av.addCheckedLocation(ap_location_name_to_id(genusLocationName.value))
-
             collectionNetList = av.fishCollection.getNetLists()
-            av.ap_setFishCollection(collectionNetList[0], collectionNetList[1], collectionNetList[2])
+            av.d_setFishCollection(collectionNetList[0], collectionNetList[1], collectionNetList[2])
             av.fishTank.addFish(fish)
             tankNetList = av.fishTank.getNetLists()
             av.d_setFishTank(tankNetList[0], tankNetList[1], tankNetList[2])
             return [itemType, fish.getGenus(), fish.getSpecies(), fish.getWeight()]
-        elif itemType == FishGlobals.BootItem:
+        elif itemType == FishGlobals.FishItem:
             return [itemType, 0, 0, 0]
         else:
             money = FishGlobals.Rod2JellybeanDict[av.getFishingRod()]
@@ -173,7 +159,6 @@ class FishManagerAI:
         curTrophies = len(av.fishingTrophies)
         av.addMoney(av.fishTank.getTotalValue())
         av.b_setFishTank([], [], [])
-        self.checkForFishingLocationCompletions(av)
 
         if trophies > curTrophies:
             # av.b_setMaxHp(av.getMaxHp() + trophies - curTrophies)
@@ -183,21 +168,3 @@ class FishManagerAI:
 
         return False
 
-    def checkForFishingLocationCompletions(self, av):
-        thresholdToLocation = {
-            10: locations.ToontownLocationName.FISHING_10_SPECIES.value,
-            20: locations.ToontownLocationName.FISHING_20_SPECIES.value,
-            30: locations.ToontownLocationName.FISHING_30_SPECIES.value,
-            40: locations.ToontownLocationName.FISHING_40_SPECIES.value,
-            50: locations.ToontownLocationName.FISHING_50_SPECIES.value,
-            60: locations.ToontownLocationName.FISHING_60_SPECIES.value,
-            70: locations.ToontownLocationName.FISHING_COMPLETE_ALBUM.value,
-        }
-
-        numFish = len(av.fishCollection)
-        for threshold, check in thresholdToLocation.items():
-            if numFish < threshold:
-                continue
-
-            check_id = ap_location_name_to_id(check)
-            av.addCheckedLocation(check_id)

@@ -39,8 +39,6 @@ OptionToType = {
     'boss-alerts': OptionTypes.BUTTON,
     'speedchat-style': OptionTypes.BUTTON_SPEEDCHAT,
     'discord-rich-presence': OptionTypes.BUTTON,
-    'archipelago-textsize': OptionTypes.SLIDER,
-    'archipelago-log-bg': OptionTypes.BUTTON,
     'color-blind-mode': OptionTypes.BUTTON,
     'want-legacy-models': OptionTypes.BUTTON,
     'laff-display': OptionTypes.BUTTON,
@@ -65,7 +63,6 @@ OptionToType = {
     "music-volume": OptionTypes.SLIDER,
     "sfx-volume": OptionTypes.SLIDER,
     "toon-chat-sounds": OptionTypes.BUTTON,
-    'ap-sounds': OptionTypes.BUTTON,
     "random-music": OptionTypes.BUTTON,
     "refresh-audio": OptionTypes.BUTTON
 }
@@ -151,8 +148,6 @@ class OptionsTabPage(DirectFrame, FSM):
             'boss-alerts',
             'speedchat-style',
             'discord-rich-presence',
-            'archipelago-textsize',
-            'archipelago-log-bg',
             'color-blind-mode',
             'want-legacy-models',
             'laff-display',
@@ -168,7 +163,7 @@ class OptionsTabPage(DirectFrame, FSM):
         ],
         "Audio": [
             "music", "sfx", "music-volume", "sfx-volume", "toon-chat-sounds",
-            'ap-sounds', "random-music", "refresh-audio"
+            "random-music", "refresh-audio"
         ],
     }
 
@@ -772,8 +767,6 @@ class OptionElement(DirectFrame):
             base.toonChatSounds = newSetting
         elif self.optionName == 'competitive-boss-scoring':
             base.localAvatar.wantCompetitiveBossScoring = newSetting
-        elif self.optionName == 'archipelago-log-bg':
-            base.localAvatar.wantLogBg = newSetting
         elif self.optionName == 'boss-alerts':
             base.localAvatar.wantAlerts = newSetting
         elif self.optionName == 'report-errors':

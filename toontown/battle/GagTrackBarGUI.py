@@ -2,7 +2,6 @@ from direct.gui import DirectGuiGlobals
 from direct.gui.DirectWaitBar import DirectWaitBar
 from panda3d.core import TextNode
 
-from toontown.archipelago.util.global_text_properties import get_raw_formatted_string, MinimalJsonMessagePart
 from toontown.toon.Experience import Experience
 from toontown.toonbase import ToontownBattleGlobals, TTLocalizer
 

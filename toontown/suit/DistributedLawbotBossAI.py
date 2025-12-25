@@ -16,11 +16,6 @@ from toontown.coghq import DistributedLawbotCannonAI
 from toontown.coghq import DistributedLawbotChairAI
 from toontown.toonbase import ToontownBattleGlobals
 
-from apworld.toontown import locations
-from ..archipelago.definitions.death_reason import DeathReason
-
-from ..archipelago.definitions.util import ap_location_name_to_id
-
 
 class DistributedLawbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FSM):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedLawbotBossAI')
@@ -707,14 +702,6 @@ class DistributedLawbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FSM
         for toonId in self.involvedToons:
             toon = self.air.doId2do.get(toonId)
             if toon:
-                toon.addCheckedLocations([ap_location_name_to_id(location) for location in [
-                    locations.ToontownLocationName.LAWBOT_PROOF_1.value,
-                    locations.ToontownLocationName.LAWBOT_PROOF_2.value,
-                    locations.ToontownLocationName.LAWBOT_PROOF_3.value,
-                    locations.ToontownLocationName.LAWBOT_PROOF_4.value,
-                    locations.ToontownLocationName.LAWBOT_PROOF_5.value,
-                    locations.ToontownLocationName.FIGHT_CJ.value
-                ]])
                 for reward in range(numRewards):
                     preferredDept = random.randrange(len(SuitDNA.suitDepts))
                     typeWeights = ['single'] * 70 + ['building'] * 27 + ['invasion'] * 3
@@ -1000,21 +987,4 @@ class DistributedLawbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FSM
         if battleDifficulty >= numDifficultyLevels:
             battleDifficulty = numDifficultyLevels - 1
         self.b_setBattleDifficulty(battleDifficulty)
-
-    # Given an attack code, return a death reason that corresponds with it.
-    def getDeathReasonFromAttackCode(self, attackCode) -> DeathReason:
-
-        return {
-            ToontownGlobals.BossCogAreaAttack: DeathReason.CJ_JUMP,
-            ToontownGlobals.BossCogSwatLeft: DeathReason.CJ_SWAT,
-            ToontownGlobals.BossCogSwatRight: DeathReason.CJ_SWAT,
-            ToontownGlobals.BossCogElectricFence: DeathReason.CJ_RUNOVER,
-
-            ToontownGlobals.BossCogLawyerAttack: DeathReason.CJ_LAWYER,
-            ToontownGlobals.BossCogGavelHandle: DeathReason.CJ_GAVEL_SMALL,
-            ToontownGlobals.BossCogGavelStomp: DeathReason.CJ_GAVEL_BIG
-        }.get(attackCode, DeathReason.CJ)
-
-    def getDeathReasonFromBattle(self) -> DeathReason:
-        return DeathReason.BATTLING_CJ
 

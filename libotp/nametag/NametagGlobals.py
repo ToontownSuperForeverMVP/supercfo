@@ -1,7 +1,5 @@
 from panda3d.core import *
 
-from toontown.archipelago.definitions.color_profile import ColorProfile
-
 _speech_balloon_3d = None
 
 

@@ -4185,7 +4185,7 @@ LauncherPhaseNames = {0: 'Initialization',
  13: 'Parties',
  14: 'AP'}
 LauncherProgress = '%(name)s (%(current)s of %(total)s)'
-LauncherStartingMessage = "Starting Toontown: Archipelago... "
+LauncherStartingMessage = "Starting Super CFO... "
 LauncherDownloadFile = 'Downloading update for ' + LauncherProgress + '...'
 LauncherDownloadFileBytes = 'Downloading update for ' + LauncherProgress + ': %(bytes)s'
 LauncherDownloadFilePercent = 'Downloading update for ' + LauncherProgress + ': %(percent)s%%'
@@ -4201,7 +4201,7 @@ LauncherDownloadServerFileList = 'Updating Toontown...'
 LauncherCreatingDownloadDb = 'Updating Toontown...'
 LauncherDownloadClientFileList = 'Updating Toontown...'
 LauncherFinishedDownloadDb = 'Updating Toontown... '
-LauncherStartingGame = 'Starting Toontown: Archipelago...'
+LauncherStartingGame = 'Starting Super CFO...'
 LauncherRecoverFiles = 'Updating Toontown. Recovering files...'
 LauncherCheckUpdates = 'Checking for updates for ' + LauncherProgress
 LauncherVerifyPhase = 'Updating Toontown...'
@@ -9968,9 +9968,7 @@ OptionNames = {
     "cam-toggle-lock": "Camera Toggle Lock",
     "speedchat-style": "Speedchat Color",
     'discord-rich-presence': 'Discord Rich Presence',
-    "archipelago-textsize": "Archipelago Log Text Size",
     'boss-alerts': "Cog Boss Attack Alerts",
-    "archipelago-log-bg": "Archipelago Log Background",
     "color-blind-mode": "Colorblind Mode",
     "want-legacy-models": "Toggle TTO Species Models*",
     'laff-display': "Toggle Overhead Laff Meter",
@@ -9978,7 +9976,7 @@ OptionNames = {
 
     # Privacy
     "competitive-boss-scoring": "Want Competitive Boss Scoring",
-    "report-errors": "Report Crash Logs to TT:AP",
+    "report-errors": "Report Crash Logs",
 
     # Controls
     "JUMP": "Jump",

@@ -10,7 +10,6 @@ from direct.fsm import ClassicFSM
 from direct.fsm import State
 from direct.directutil import Mopath
 
-from toontown.archipelago.definitions.death_reason import DeathReason
 from toontown.toonbase import ToontownGlobals
 from direct.actor import Actor
 
@@ -161,5 +160,4 @@ class Train(DirectObject):
         self.ignore('enter' + self.collNodeName)
 
     def __handleCollisionSphereEnter(self, collEntry = None):
-        base.localAvatar.d_setDeathReason(DeathReason.TRAIN)
         base.localAvatar.b_squish(10)

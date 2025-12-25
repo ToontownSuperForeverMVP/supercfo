@@ -1,5 +1,4 @@
 from otp.level import DistributedEntityAI
-from toontown.archipelago.definitions.death_reason import DeathReason
 from toontown.coghq import MoleFieldBase
 from direct.distributed.ClockDelta import globalClockDelta
 from direct.directnotify import DirectNotifyGlobal
@@ -110,7 +109,6 @@ class DistributedMoleFieldAI(DistributedEntityAI.DistributedEntityAI, MoleFieldB
         av = simbase.air.doId2do.get(senderId)
         playerIds = room.presentAvIds
         if av and senderId in playerIds:
-            av.setDeathReason(DeathReason.MOLES)
             av.takeDamage(self.DamageOnFailure, quietly=0)
             room.sendUpdate('forceOuch', [self.DamageOnFailure])
 

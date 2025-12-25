@@ -44,7 +44,6 @@ from . import HoodMgr
 from . import PlayGame
 from toontown.toontowngui import ToontownLoadingBlocker
 from toontown.hood import StreetSign
-from ..archipelago.distributed.DistributedArchipelagoManager import DistributedArchipelagoManager
 from ..friends.OnlinePlayerManager import OnlinePlayerManager
 from ..friends.OnlineToon import OnlineToon
 
@@ -62,7 +61,6 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
     playGame: PlayGame.PlayGame
 
     onlinePlayerManager: OnlinePlayerManager
-    archipelagoManager: DistributedArchipelagoManager
 
     def __init__(self, serverVersion, launcher = None):
         OTPClientRepository.OTPClientRepository.__init__(self, serverVersion, launcher, playGame=PlayGame.PlayGame)
@@ -102,9 +100,6 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
         self.deliveryManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_TOONTOWN_DELIVERY_MANAGER, 'DistributedDeliveryManager')
         if config.GetBool('want-code-redemption', 1):
             self.codeRedemptionManager = self.generateGlobalObject(OtpDoGlobals.OTP_DO_ID_TOONTOWN_CODE_REDEMPTION_MANAGER, 'TTCodeRedemptionMgr')
-
-        # Generated as a DO from the AI
-        self.archipelagoManager: Union[DistributedArchipelagoManager, None] = None
 
         self.streetSign = None
         self.furnitureManager = None
@@ -556,7 +551,7 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
             else:
                 self.notify.info('dumpAllSubShardObjects: defaultShard is %s' % localAvatar.defaultShard)
 
-            ignoredClasses = ('MagicWordManager', 'TimeManager', 'DistributedDistrict', 'FriendManager', 'NewsManager', 'ToontownMagicWordManager', 'WelcomeValleyManager', 'DistributedTrophyMgr', 'CatalogManager', 'DistributedBankMgr', 'EstateManager', 'RaceManager', 'SafeZoneManager', 'DeleteManager', 'TutorialManager', 'ToontownDistrict', 'DistributedDeliveryManager', 'DistributedPartyManager', 'AvatarFriendsManager', 'InGameNewsMgr', 'WhitelistMgr', 'TTCodeRedemptionMgr', 'DistributedArchipelagoManager')
+            ignoredClasses = ('MagicWordManager', 'TimeManager', 'DistributedDistrict', 'FriendManager', 'NewsManager', 'ToontownMagicWordManager', 'WelcomeValleyManager', 'DistributedTrophyMgr', 'CatalogManager', 'DistributedBankMgr', 'EstateManager', 'RaceManager', 'SafeZoneManager', 'DeleteManager', 'TutorialManager', 'ToontownDistrict', 'DistributedDeliveryManager', 'DistributedPartyManager', 'AvatarFriendsManager', 'InGameNewsMgr', 'WhitelistMgr', 'TTCodeRedemptionMgr')
         messenger.send('clientCleanup')
         for avId, pad in list(self.__queryAvatarMap.items()):
             pad.delayDelete.destroy()
@@ -982,20 +977,8 @@ class ToontownClientRepository(OTPClientRepository.OTPClientRepository):
 
     def onToonCameOnline(self, onlineToon: OnlineToon):
         # Send our local toon a message.
-        color = None
-
-        # If our AP manager is running, try and find a color for them :3
-        if self.archipelagoManager is not None:
-            color = self.archipelagoManager.getToonColorProfile(onlineToon.avId)
-
-        base.localAvatar.displayWhisper(onlineToon.avId, OTPLocalizer.WhisperFriendComingOnline % onlineToon.name, WhisperType.WTSystem, colorProfileOverride=color)
+        base.localAvatar.displayWhisper(onlineToon.avId, OTPLocalizer.WhisperFriendComingOnline % onlineToon.name, WhisperType.WTSystem)
 
     def onToonWentOffline(self, offlineToon: OnlineToon):
         # Send our local toon a message.
-        color = None
-
-        # If our AP manager is running, try and find a color for them :3
-        if self.archipelagoManager is not None:
-            color = self.archipelagoManager.getToonColorProfile(offlineToon.avId)
-
-        base.localAvatar.displayWhisper(0, OTPLocalizer.WhisperFriendLoggedOut % offlineToon.name, WhisperType.WTSystem, colorProfileOverride=color)
+        base.localAvatar.displayWhisper(0, OTPLocalizer.WhisperFriendLoggedOut % offlineToon.name, WhisperType.WTSystem)

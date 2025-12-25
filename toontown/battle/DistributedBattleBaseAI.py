@@ -19,7 +19,6 @@ import random
 from toontown.toon import NPCToons
 from toontown.pets import DistributedPetProxyAI
 from toontown.battle import BattleEffectHandlersAI
-from ..archipelago.definitions.death_reason import DeathReason
 from ..hood import ZoneUtil
 
 
@@ -28,7 +27,6 @@ class DistributedBattleBaseAI(DistributedObjectAI.DistributedObjectAI, BattleBas
 
     def __init__(self, air, zoneId, finishCallback = None, maxSuits = 4, bossBattle = 0, tutorialFlag = 0, interactivePropTrackBonus = -1):
         DistributedObjectAI.DistributedObjectAI.__init__(self, air)
-        self.battleDeathReason: DeathReason = DeathReason.BATTLING
         self.serialNum = 0
         self.zoneId = zoneId
         self.maxSuits = maxSuits
@@ -104,12 +102,6 @@ class DistributedBattleBaseAI(DistributedObjectAI.DistributedObjectAI, BattleBas
         self.startTime = globalClock.getRealTime()
         self.adjustingTimer = Timer()
         return
-
-    def getBattleDeathReason(self) -> DeathReason:
-        return self.battleDeathReason
-
-    def setBattleDeathReason(self, reason: DeathReason):
-        self.battleDeathReason = reason
 
     def clearAttacks(self):
         self.toonAttacks = {}
@@ -539,7 +531,6 @@ class DistributedBattleBaseAI(DistributedObjectAI.DistributedObjectAI, BattleBas
         toon = self.getToon(avId)
         if toon == None:
             return 0
-        toon.setDeathReason(self.getBattleDeathReason())
         toon.stopToonUp()
         event = simbase.air.getAvatarExitEvent(avId)
         self.avatarExitEvents.append(event)
@@ -1512,11 +1503,6 @@ class DistributedBattleBaseAI(DistributedObjectAI.DistributedObjectAI, BattleBas
         self.numNPCAttacks = 0
         self.notify.debug('estimated upper bound of movie time: %f' % movieTime)
         self.timer.startCallback(movieTime, self.__serverMovieDone)
-
-        for avId in self.toons:
-            toon = simbase.air.doId2do.get(avId)
-            if toon:
-                toon.setDeathReason(self.getBattleDeathReason())
 
     def __serverMovieDone(self):
         self.notify.debug('movie timed out on server')

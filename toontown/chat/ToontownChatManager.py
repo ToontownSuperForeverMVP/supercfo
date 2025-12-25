@@ -12,7 +12,6 @@ from otp.chat import ChatManager
 from .TTChatInputSpeedChat import TTChatInputSpeedChat
 from .TTChatInputNormal import TTChatInputNormal
 from .TTChatInputWhiteList import TTChatInputWhiteList
-from toontown.archipelago.gui import ArchipelagoConnectGUI
 
 class HackedDirectRadioButton(DirectCheckButton):
 
@@ -39,18 +38,6 @@ class ToontownChatManager(ChatManager.ChatManager):
         self.openScSfx.setVolume(0.6)
         self.scButton = DirectButton(image=(gui.find('**/ChtBx_ChtBtn_UP'), gui.find('**/ChtBx_ChtBtn_DN'), gui.find('**/ChtBx_ChtBtn_RLVR')), pos=TTLocalizer.TCMscButtonPos, parent=base.a2dTopLeft, scale=1.179, relief=None, image_color=Vec4(0.75, 1, 0.6, 1), text=('', OTPLocalizer.GlobalSpeedChatName, OTPLocalizer.GlobalSpeedChatName), text_scale=TTLocalizer.TCMscButton, text_fg=Vec4(1, 1, 1, 1), text_shadow=Vec4(0, 0, 0, 1), text_pos=(0, -0.09), textMayChange=0, sortOrder=DGG.FOREGROUND_SORT_INDEX, command=self.__scButtonPressed, clickSound=self.openScSfx)
         self.scButton.hide()
-        self.apButton = DirectButton(
-            image=(gui.find('**/ChtBx_ChtBtn_UP'), gui.find('**/ChtBx_ChtBtn_DN'), gui.find('**/ChtBx_ChtBtn_RLVR')),
-            pos=(0.3397, 0, -0.072), parent=base.a2dTopLeft, scale=1.179, relief=None,
-            image_color=Vec4(0.75, 0, 0, 1),
-            text=('', "Archipelago", "Archipelago"),
-            text_scale=TTLocalizer.TCMscButton, text_fg=Vec4(1, 1, 1, 1), text_shadow=Vec4(0, 0, 0, 1),
-            text_pos=(0, -0.09), textMayChange=0, sortOrder=DGG.FOREGROUND_SORT_INDEX, command=self.__apButtonPressed,
-            clickSound=self.openScSfx)
-        self.apButton.hide()
-        self.apGui = ArchipelagoConnectGUI.ArchipelagoConnectGUI()
-        self.apGui.hide()
-        self.apGuiToggled = False
         self.whisperFrame = DirectFrame(parent=base.a2dTopLeft, relief=None, image=DGG.getDefaultDialogGeom(), image_scale=(0.45, 0.45, 0.45), image_color=OTPGlobals.GlobalDialogColor, pos=(0.933333, 0, -0.246), text=OTPLocalizer.ChatManagerWhisperTo, text_wordwrap=7.0, text_scale=TTLocalizer.TCMwhisperFrame, text_fg=Vec4(0, 0, 0, 1), text_pos=(0, 0.14), textMayChange=1, sortOrder=DGG.FOREGROUND_SORT_INDEX)
         self.whisperFrame.hide()
         self.whisperButton = DirectButton(parent=self.whisperFrame, image=(gui.find('**/ChtBx_ChtBtn_UP'), gui.find('**/ChtBx_ChtBtn_DN'), gui.find('**/ChtBx_ChtBtn_RLVR')), pos=(-0.125, 0, -0.1), scale=1.179, relief=None, image_color=Vec4(1, 1, 1, 1), text=('',
@@ -95,8 +82,6 @@ class ToontownChatManager(ChatManager.ChatManager):
         del self.whisperButton
         self.whisperScButton.destroy()
         del self.whisperScButton
-        self.apButton.destroy()
-        del self.apButton
         self.whisperCancelButton.destroy()
         del self.whisperCancelButton
         self.chatInputWhiteList.destroy()
@@ -141,7 +126,6 @@ class ToontownChatManager(ChatManager.ChatManager):
         normObs, scObs = self.isObscured()
         if not scObs:
             self.scButton.show()
-            self.apButton.show()
         if not normObs:
             self.normalButton.show()
         return
@@ -203,7 +187,6 @@ class ToontownChatManager(ChatManager.ChatManager):
         normObs, scObs = self.isObscured()
         if not scObs:
             self.scButton.show()
-            self.apButton.show()
         if not normObs:
             self.normalButton.show()
         return
@@ -426,25 +409,6 @@ class ToontownChatManager(ChatManager.ChatManager):
             print('ChatManager: productName: %s not recognized' % base.cr.productName)
 
     def __scButtonPressed(self):
-        if base.config.GetBool('want-qa-regression', 0):
-            self.notify.info('QA-REGRESSION: CHAT: Speedchat')
-        messenger.send('wakeup')
-        if self.fsm.getCurrentState().getName() == 'speedChat':
-            self.fsm.request('mainMenu')
-        else:
-            self.fsm.request('speedChat')
-
-    def __apButtonPressed(self):
-        if not self.apGuiToggled:
-            self.apGui.updateFields()
-            self.apGui.show()
-            self.apGuiToggled = True
-            self.apButton['text'] = "Hide Panel"
-        else:
-            self.apGui.hide()
-            self.apGuiToggled = False
-            self.apButton['text'] = ""
-
     def __whisperButtonPressed(self, avatarName, avatarId, playerId):
         messenger.send('wakeup')
         playerInfo = None

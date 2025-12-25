@@ -15,7 +15,6 @@ from otp.chat import TalkAssistant
 from otp.otpbase import OTPGlobals
 from otp.avatar.Avatar import teleportNotify
 from otp.distributed.TelemetryLimited import TelemetryLimited
-from toontown.archipelago.definitions.color_profile import ColorProfile
 
 if base.config.GetBool('want-chatfilter-hacks', 0):
     from otp.switchboard import badwordpy

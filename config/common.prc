@@ -2,7 +2,7 @@
 version v0.18.5 Alpha
 
 
-server-version tt-ap-edition
+server-version supercfo
 
 # Developer settings
 want-dev false
@@ -21,7 +21,7 @@ default-directnotify-level info
 
 # Window settings
 load-display pandagl
-window-title Toontown: Archipelago
+window-title Super CFO
 win-origin -2 -2
 depth-bits 24
 frame-rate-meter-text-pattern %0.f FPS

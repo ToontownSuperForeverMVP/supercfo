@@ -1,6 +1,6 @@
 from typing import Union
 
-from toontown.archipelago.definitions.color_profile import ColorProfile
+from .ColorProfile import ColorProfile
 from . import WhisperGlobals
 from .ClickablePopup import *
 from .MarginPopup import *

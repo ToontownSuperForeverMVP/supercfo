@@ -2,7 +2,7 @@ from enum import IntEnum, auto
 
 from panda3d.core import Vec4
 
-from toontown.archipelago.definitions.color_profile import ColorProfile, GRAY
+from .ColorProfile import ColorProfile, GRAY
 
 
 class WhisperType(IntEnum):

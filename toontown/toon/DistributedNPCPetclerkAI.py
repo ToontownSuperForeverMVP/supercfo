@@ -5,9 +5,6 @@ from toontown.toonbase import TTLocalizer
 from direct.task import Task
 from toontown.fishing import FishGlobals
 from toontown.pets import PetUtil, PetDNA, PetConstants
-from apworld.toontown.options import RewardDisplayOption
-from toontown.archipelago.definitions import util
-from toontown.archipelago.packets.serverbound.location_scouts_packet import LocationScoutsPacket
 from toontown.hood import ZoneUtil
 import random
 
@@ -38,13 +35,6 @@ class DistributedNPCPetclerkAI(DistributedNPCToonBaseAI):
         self.acceptOnce(self.air.getAvatarExitEvent(avId), self.__handleUnexpectedExit, extraArgs=[avId])
         flag = NPCToons.SELL_MOVIE_START
         self.d_setMovie(avId, flag)
-        # taskMgr.doMethodLater(PetConstants.PETCLERK_TIMER, self.sendTimeoutMovie, self.uniqueName('clearMovie'))
-        #is auto hint turned on?
-        if av.slotData.get("pet_shop_display", RewardDisplayOption.default) == RewardDisplayOption.option_auto_hint:
-            packet = LocationScoutsPacket()
-            packet.create_as_hint = 2 # only announce new hints
-            packet.locations = [util.ap_location_name_to_id(self.getCheckName())]
-            av.archipelago_session.client.send_packet(packet)
         DistributedNPCToonBaseAI.avatarEnter(self)
 
     def rejectAvatar(self, avId):
@@ -95,14 +85,10 @@ class DistributedNPCPetclerkAI(DistributedNPCToonBaseAI):
                 self.air.writeServerEvent('suspicious', avId, 'DistributedNPCPetshopAI.petAdopted and no such pet!')
                 self.notify.warning('somebody called petAdopted on a non-existent pet! avId: %s' % avId)
                 return
-            baseCost = ToontownGlobals.ZONE_TO_CHECK_COST[zoneId]
-            if av.slotData.get('random_prices', False):
-                rng = random.Random()
-                rng.seed(f"{av.getSeed()}-{self.subId}")
-                # This price will be consistent based on our archi rng setting
-                cost = rng.randint((baseCost + ToontownGlobals.PRICE_RANDO_MIN), (baseCost + ToontownGlobals.PRICE_RANDO_MAX))
-            else:
-                cost = baseCost
+            
+            # Simple cost for now
+            cost = 100
+            
             if cost > av.getMoney():
                 self.air.writeServerEvent('suspicious', avId, "DistributedNPCPetshopAI.petAdopted and toon doesn't have enough money!")
                 self.notify.warning("somebody called petAdopted and didn't have enough money to adopt! avId: %s" % avId)
@@ -114,17 +100,9 @@ class DistributedNPCPetclerkAI(DistributedNPCToonBaseAI):
                 self.air.writeServerEvent('avoid_crash', avId, "DistributedNPCPetclerkAI.petAdopted and didn't have valid nameIndex!")
                 self.notify.warning("somebody called petAdopted and didn't have valid nameIndex to adopt! avId: %s" % avId)
                 return
-            if not av.hasCheckedLocation(util.ap_location_name_to_id(self.getCheckName())):
-                av.addCheckedLocation(util.ap_location_name_to_id(self.getCheckName()))
-                self.transactionType = 'adopt'
-            else:
-                self.transactionType = 'checked'
-                return
+            
+            self.transactionType = 'adopt'
             av.takeMoney(cost)
-
-    def getCheckName(self):
-        zoneId = ZoneUtil.getCanonicalSafeZoneId(self.zoneId)
-        return ToontownGlobals.ZONE_TO_ID_TO_CHECK[zoneId][self.subId]
 
     def petReturned(self):
         avId = self.air.getAvatarIdFromSender()

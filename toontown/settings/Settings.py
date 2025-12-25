@@ -43,7 +43,6 @@ class Settings:
         "music": True,
         "sfx": True,
         "toon-chat-sounds": True,
-        'ap-sounds': True,
         "resolution": [1280, 720],
         "music-volume": 0.4,
         "sfx-volume": 0.4,
@@ -66,8 +65,6 @@ class Settings:
         'laff-display': True,
         'battle-speed': 2,
         'random-music': False,
-        "archipelago-textsize": 0.5,
-        "archipelago-log-bg": False,
         'boss-alerts': True,
         # Options below this comment will not be exposed by OptionsPage
         # They can still be configurable by the end user
@@ -76,7 +73,7 @@ class Settings:
         'discord-rich-presence': False,
         "color-blind-mode": False,
     }
-    settingsFile = Path.home() / "Documents" / "Toontown Archipelago" / "settings.json"
+    settingsFile = Path.home() / "Documents" / "Super CFO" / "settings.json"
 
 
     def __init__(self) -> None:

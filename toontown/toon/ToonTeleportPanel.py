@@ -75,9 +75,10 @@ class ToonTeleportPanel(DirectFrame):
             State.State('wentAway',
                 self.enterWentAway,
                 self.exitWentAway),
-            State.State('enemyTeam',
-                        self.enterEnemyTeam,
-                        self.exitEnemyTeam),
+            State.State('checkAvailability',
+                        self.enterCheckAvailability,
+                        self.exitCheckAvailability,
+                        ['notAvailable', 'notOnline', 'wentAway', 'teleport']),
             State.State('self',
                 self.enterSelf,
                 self.exitSelf),
@@ -130,8 +131,6 @@ class ToonTeleportPanel(DirectFrame):
         hasManager = hasattr(base.cr, 'playerFriendsManager')
         if self.avId == myId:
             self.fsm.request('self')
-        elif base.cr.archipelagoManager is not None and base.cr.archipelagoManager.onEnemyTeams(myId, self.avId):
-            self.fsm.request('enemyTeam')
         elif self.avId in base.cr.doId2do:
             self.fsm.request('checkAvailability')
         elif base.cr.isFriend(self.avId):
@@ -202,15 +201,7 @@ class ToonTeleportPanel(DirectFrame):
     def exitWentAway(self):
         self.bOk.hide()
 
-    def enterEnemyTeam(self):
-        self['text'] = TTLocalizer.TeleportPanelEnemyTeam % self.avName
-        self.bOk.show()
-
-    def exitEnemyTeam(self):
-        self.bOk.hide()
-
-
-    def enterUnknownHood(self, hoodId):
+        def enterUnknownHood(self, hoodId):
         self['text'] = TTLocalizer.TeleportPanelUnknownHood % base.cr.hoodMgr.getFullnameFromId(hoodId)
         self.bOk.show()
 

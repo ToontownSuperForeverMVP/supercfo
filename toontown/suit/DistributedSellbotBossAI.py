@@ -14,11 +14,6 @@ from toontown.toon import NPCToons
 from toontown.suit import SellbotBossGlobals
 import random
 
-from apworld.toontown import locations
-from ..archipelago.definitions.death_reason import DeathReason
-
-from ..archipelago.definitions.util import ap_location_name_to_id
-
 
 class DistributedSellbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FSM):
     notify = DirectNotifyGlobal.directNotify.newCategory('DistributedSellbotBossAI')
@@ -265,25 +260,6 @@ class DistributedSellbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FS
             toon.b_setNumPies(0)
         DistributedBossCogAI.DistributedBossCogAI.removeToon(self, avId, died=died)
 
-    # Given an attack code, return a death reason that corresponds with it.
-    def getDeathReasonFromAttackCode(self, attackCode) -> DeathReason:
-
-        return {
-            ToontownGlobals.BossCogAreaAttack: DeathReason.VP_JUMP,
-            ToontownGlobals.BossCogSlowDirectedAttack: DeathReason.VP_GEAR,
-            ToontownGlobals.BossCogDirectedAttack: DeathReason.VP_GEAR,
-            ToontownGlobals.BossCogGearDirectedAttack: DeathReason.VP_GEAR,
-            ToontownGlobals.BossCogSwatLeft: DeathReason.VP_SWAT,
-            ToontownGlobals.BossCogSwatRight: DeathReason.VP_SWAT,
-            ToontownGlobals.BossCogElectricFence: DeathReason.VP_RUNOVER,
-            ToontownGlobals.BossCogStrafeAttack: DeathReason.VP_STRAFE,
-            ToontownGlobals.BossCogRecoverDizzyAttack: DeathReason.VP_SHOWER,
-            ToontownGlobals.BossCogFrontAttack: DeathReason.VP_SHOWER,
-        }.get(attackCode, DeathReason.VP)
-
-    def getDeathReasonFromBattle(self) -> DeathReason:
-        return DeathReason.BATTLING_VP
-
     def enterOff(self):
         DistributedBossCogAI.DistributedBossCogAI.enterOff(self)
         self.__resetDoobers()
@@ -368,7 +344,6 @@ class DistributedSellbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FS
             toon = simbase.air.doId2do.get(toonId)
             if toon:
                 toon.__touchedCage = 0
-                toon.setDeathReason(DeathReason.VP)
 
         self.waitForNextAttack(5)
         self.waitForNextStrafe(9)
@@ -442,15 +417,6 @@ class DistributedSellbotBossAI(DistributedBossCogAI.DistributedBossCogAI, FSM.FS
         for toonId in self.involvedToons:
             toon = self.air.doId2do.get(toonId)
             if toon:
-                toon.addCheckedLocations([ap_location_name_to_id(location) for location in [
-                    locations.ToontownLocationName.SELLBOT_PROOF_1.value,
-                    locations.ToontownLocationName.SELLBOT_PROOF_2.value,
-                    locations.ToontownLocationName.SELLBOT_PROOF_3.value,
-                    locations.ToontownLocationName.SELLBOT_PROOF_4.value,
-                    locations.ToontownLocationName.SELLBOT_PROOF_5.value,
-                    locations.ToontownLocationName.FIGHT_VP.value
-                ]])
-
                 configMax = simbase.config.GetInt('max-sos-cards', 16)
                 if configMax == 8:
                     maxNumCalls = 1

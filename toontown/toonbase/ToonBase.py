@@ -30,7 +30,6 @@ import atexit
 import shutil
 import time
 
-import toontown.archipelago.util.global_text_properties as global_text_properties
 from .ErrorTrackingService import ErrorTrackingService, SentryErrorTrackingService, ServiceType
 from ..settings.Settings import Settings, ControlSettings
 
@@ -45,8 +44,6 @@ class ToonBase(OTPBase.OTPBase):
 
         version = self.config.GetString('version', 'v???')
         self.errorReportingService: ErrorTrackingService = SentryErrorTrackingService(ServiceType.CLIENT, version)
-
-        self.global_text_properties = global_text_properties
 
         self.settings = Settings()
         self.setMultiThreading()
@@ -211,7 +208,7 @@ class ToonBase(OTPBase.OTPBase):
         self.randomMusic = self.settings.get("random-music")
         self.discord = DiscordRPC()
         self.discord.launching()
-        self.ap_version_text = OnscreenText(text=f"Toontown: Archipelago {version}", parent=self.a2dBottomLeft, pos=(.3, .05), mayChange=False, sort=-100, scale=.04, fg=(1, 1, 1, .3), shadow=(0, 0, 0, .3), align=TextNode.ALeft)
+        self.ap_version_text = OnscreenText(text="Toontown SuperCFO Testing", parent=self.a2dBottomLeft, pos=(.3, .05), mayChange=False, sort=-100, scale=.04, fg=(1, 1, 1, .3), shadow=(0, 0, 0, .3), align=TextNode.ALeft)
 
         self.enableHotkeys()
 

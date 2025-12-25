@@ -184,17 +184,13 @@ class FriendsListPanel(DirectFrame, StateData.StateData):
         DirectFrame.destroy(self)
 
     def makeFriendButton(self, toonId, name):
-        teamColor = base.cr.archipelagoManager.getToonColorProfile(toonId)
         return DirectButton(
             relief=None,
             text=name,
             text_scale=0.04,
             text_align=TextNode.ALeft,
-            text_fg=teamColor.clickable,
+            text_fg=(0, 0, 0, 1),
             text_shadow=None,
-            text1_bg=teamColor.pressed,
-            text2_bg=teamColor.hover,
-            text3_fg=teamColor.disabled,
             text_font=ToontownGlobals.getToonFont(),
             textMayChange=0,
             command=self.__clickedPlayerButton,
@@ -316,7 +312,7 @@ class FriendsListPanel(DirectFrame, StateData.StateData):
         self.playerButtons.clear()
 
         # Sort the ID's based on teams
-        toonIdsToRender = sorted(toonIdsToRender, key=lambda x: (base.cr.archipelagoManager.getToonTeam(x[0]), x[1]))
+        toonIdsToRender = sorted(toonIdsToRender, key=lambda x: x[1])
 
         # Create the buttons for all the toons.
         for toonInfo in toonIdsToRender:
@@ -328,30 +324,9 @@ class FriendsListPanel(DirectFrame, StateData.StateData):
         self.scrollList.index = self.listScrollIndex[self.currentPanelPage]
         self.scrollList.refresh()
 
-    # Trys to determine if we are in "competition" mode.
-    # This is True when there exists someone that is considered your enemy currently online.
-    def __competitionMode(self) -> bool:
-
-        # We need both these managers to even consider this.
-        if None in (base.cr.archipelagoManager, base.cr.onlinePlayerManager):
-            return False
-
-        # Check if any of the currently online toons are our enemy.
-        us = base.localAvatar.getDoId()
-        for toon in base.cr.onlinePlayerManager.getOnlineToons():
-            if base.cr.archipelagoManager.onEnemyTeams(us, toon.avId):
-                return True
-
-        # Everyone is our friend. Yay :)
-        return False
-
     def __updateTitle(self):
-
-        # If we are on the online toons tab and we are in "competition mode"
-        if self.currentPanelPage == FLPOnline and self.__competitionMode():
-            self.title['text'] = TTLocalizer.FriendsListPanelOnlineCompetitors
-        # If we are on the online toons tab and we are NOT in competition mode
-        elif self.currentPanelPage == FLPOnline:
+        # If we are on the online toons tab
+        if self.currentPanelPage == FLPOnline:
             self.title['text'] = TTLocalizer.FriendsListPanelOnlineFriends
         elif self.currentPanelPage == FLPNearby:
             self.title['text'] = TTLocalizer.FriendsListPanelNearbyToons

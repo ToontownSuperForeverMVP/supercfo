@@ -2,7 +2,6 @@ from typing import Dict
 
 from direct.directnotify import DirectNotifyGlobal
 from otp.avatar import DistributedAvatarAI
-from toontown.archipelago.definitions.death_reason import DeathReason
 from toontown.battle import BattleExperienceAI
 from toontown.coghq.BossComboTrackerAI import BossComboTrackerAI
 from toontown.suit import SuitDNA
@@ -570,7 +569,6 @@ class DistributedBossCogAI(DistributedAvatarAI.DistributedAvatarAI):
 
     def makeBattle(self, bossCogPosHpr, battlePosHpr, roundCallback, finishCallback, battleNumber, battleSide):
         battle = DistributedBattleFinalAI.DistributedBattleFinalAI(self.air, self, roundCallback, finishCallback, battleSide)
-        battle.setBattleDeathReason(self.getDeathReasonFromBattle())
         self.setBattlePos(battle, bossCogPosHpr, battlePosHpr)
         battle.suitsKilled = self.suitsKilled
         battle.battleCalc.toonSkillPtsGained = self.toonSkillPtsGained
@@ -735,15 +733,6 @@ class DistributedBossCogAI(DistributedAvatarAI.DistributedAvatarAI):
         else:
             return 1.0
 
-    # Given an attack code, return a death reason that corresponds with it.
-    # This should be overridden per boss for unique death messages, but we provide a fallback here.
-    def getDeathReasonFromAttackCode(self, attackCode) -> DeathReason:
-        return DeathReason.BOSS
-
-    # Meant to be overridden. The reason of death to give DeathLink when we die in a cog battle in this boss.
-    def getDeathReasonFromBattle(self) -> DeathReason:
-        return DeathReason.BOSS
-
     def zapToon(self, x, y, z, h, p, r, bpx, bpy, attackCode, timestamp):
         avId = self.air.getAvatarIdFromSender()
         if not self.validate(avId, avId in self.involvedToons, 'zapToon from unknown avatar'):
@@ -760,7 +749,6 @@ class DistributedBossCogAI(DistributedAvatarAI.DistributedAvatarAI):
                 damage = 5
             damage *= self.getDamageMultiplier()
             damage = max(int(damage), 1)
-            toon.setDeathReason(self.getDeathReasonFromAttackCode(attackCode))
             self.damageToon(toon, damage)
             currState = self.getCurrentOrNextState()
             if attackCode == ToontownGlobals.BossCogElectricFence and (currState == 'RollToBattleTwo' or currState == 'BattleThree'):

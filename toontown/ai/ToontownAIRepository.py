@@ -16,7 +16,6 @@ from toontown.ai.DistributedResistanceEmoteMgrAI import DistributedResistanceEmo
 from toontown.ai.HolidayManagerAI import HolidayManagerAI
 from toontown.ai.NewsManagerAI import NewsManagerAI
 from toontown.ai.WelcomeValleyManagerAI import WelcomeValleyManagerAI
-from toontown.archipelago.distributed.DistributedArchipelagoManagerAI import DistributedArchipelagoManagerAI
 from toontown.building.DistributedTrophyMgrAI import DistributedTrophyMgrAI
 from toontown.catalog.CatalogManagerAI import CatalogManagerAI
 from toontown.coghq.CogSuitManagerAI import CogSuitManagerAI
@@ -117,14 +116,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         self.estateMgr = None
         self.magicWordManager = None
         self.deliveryManager = None
-        self.archipelagoManager = None
         self.defaultAccessLevel = OTPGlobals.accessLevelValues.get('TTOFF_DEVELOPER')
-
-        # AP stuff
-
-        # Keeps track of toon IDs and maps them to last successful connection information so they can fast !connect
-        # When relogging
-        self.archipelagoConnectionCache: Dict[int, tuple] = {}
 
     def getTrackClsends(self):
         return False
@@ -161,7 +153,7 @@ class ToontownAIRepository(ToontownInternalRepository):
         # Make our district available, and we're done.
         self.notify.info('Making district available...')
         self.district.b_setAvailable(1)
-        self.notify.info('District is now ready. Have fun in Toontown: Archipelago!')
+        self.notify.info('District is now ready.')
 
     def createLocals(self):
         """
@@ -288,10 +280,6 @@ class ToontownAIRepository(ToontownInternalRepository):
         # Generate our Magic Word manager...
         self.magicWordManager = TTOffMagicWordManagerAI(self)
         self.magicWordManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
-
-        # Generate our AP Manager...
-        self.archipelagoManager = DistributedArchipelagoManagerAI(self)
-        self.archipelagoManager.generateWithRequired(OTP_ZONE_ID_MANAGEMENT)
 
         # Generate our delivery manager...
         self.deliveryManager = self.generateGlobalObject(OTP_DO_ID_TOONTOWN_DELIVERY_MANAGER,
@@ -575,10 +563,4 @@ class ToontownAIRepository(ToontownInternalRepository):
             leaderboards.extend(foundLeaderBoards)
 
         return leaderboards
-
-    def cacheArchipelagoConnectInformation(self, avId, slotName, address):
-        self.archipelagoConnectionCache[avId] = (slotName, address)
-
-    def getCachedArchipelagoConnectionInformation(self, avId):
-        return self.archipelagoConnectionCache.get(avId, (None, None))
 
