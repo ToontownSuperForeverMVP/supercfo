@@ -17,6 +17,7 @@ backups/
 settings.json
 errorCode
 PPYTHON_PATH
+panda3d/
 
 toontown/archipelago/output/
 
