@@ -2086,3 +2086,11 @@ class LocalToon(DistributedToon.DistributedToon, LocalAvatar.LocalAvatar):
     def updateOverhead(self) -> None:
         pass
 
+    def getDamageMultiplier(self):
+        """Returns the damage multiplier for this toon. Default is 1.0 (no multiplier)."""
+        return 1.0
+
+    def getOverflowMod(self):
+        """Returns the overflow modifier for this toon. Default is 100 (100%)."""
+        return 100
+

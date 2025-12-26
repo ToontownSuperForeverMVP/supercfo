@@ -673,7 +673,15 @@ class Suit(Avatar.Avatar):
         return self.shadowJoint
 
     def getNametagJoints(self):
-        return []
+        joints = []
+        for lodName in self.getLODNames():
+            bundle = self.getPartBundle('modelRoot', lodName)
+            if not bundle:
+                 continue
+            joint = bundle.findChild('joint_nameTag')
+            if joint:
+                joints.append(joint)
+        return joints
 
     def getDialogueArray(self):
         if self.isSkeleton:
